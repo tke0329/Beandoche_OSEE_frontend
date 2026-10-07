@@ -1,0 +1,1405 @@
+[
+  {
+    "id": "denim-black",
+    "name": "denim pants (black)",
+    "category": "bottom",
+    "sub": "Pants",
+    "image": "/983f0bb8-45b1-4c53-85a6-dbc809848923.jpg",
+    "colors": [
+      {
+        "id": "black",
+        "name": "Black",
+        "hex": "#2b2b2d"
+      },
+      {
+        "id": "grey",
+        "name": "Washed grey",
+        "hex": "#6d6f73"
+      }
+    ],
+    "sizes": [
+      "26",
+      "27",
+      "28",
+      "29",
+      "30"
+    ],
+    "defaultSize": "28",
+    "fields": [
+      {
+        "key": "length",
+        "label": "총장",
+        "help": "허리 밴드 위에서 밑단까지의 길이",
+        "min": 70,
+        "max": 120
+      },
+      {
+        "key": "waist",
+        "label": "허리단면",
+        "help": "허리 밴드를 수평으로 잰 한쪽 면의 너비",
+        "min": 25,
+        "max": 55
+      },
+      {
+        "key": "hip",
+        "label": "엉덩이단면",
+        "help": "밑위 위쪽 가장 넓은 지점의 한쪽 면 너비",
+        "min": 35,
+        "max": 70
+      },
+      {
+        "key": "thigh",
+        "label": "허벅지단면",
+        "help": "밑위 아래 지점의 다리 한쪽 너비",
+        "min": 20,
+        "max": 50
+      },
+      {
+        "key": "rise",
+        "label": "밑위",
+        "help": "허리 밴드 위에서 밑위 봉제점까지의 길이",
+        "min": 20,
+        "max": 45
+      }
+    ],
+    "base": {
+      "length": 104,
+      "waist": 39,
+      "hip": 54,
+      "thigh": 33,
+      "rise": 31
+    },
+    "step": {
+      "length": 1,
+      "waist": 1.5,
+      "hip": 1.5,
+      "thigh": 1,
+      "rise": 0.5
+    },
+    "details": [
+      "코튼 100%",
+      "논스트레치 데님",
+      "와이드 스트레이트 핏",
+      "드라이클리닝 권장"
+    ]
+  },
+  {
+    "id": "jogger-grey",
+    "name": "jogger pants (grey)",
+    "category": "bottom",
+    "sub": "Pants",
+    "image": "/fba5ba5c-fcc4-4afd-acfd-25244202d7b4.jpg",
+    "colors": [
+      {
+        "id": "grey",
+        "name": "Grey",
+        "hex": "#a7aba3"
+      },
+      {
+        "id": "charcoal",
+        "name": "Charcoal",
+        "hex": "#4a4c4f"
+      }
+    ],
+    "sizes": [
+      "26",
+      "27",
+      "28",
+      "29",
+      "30"
+    ],
+    "defaultSize": "28",
+    "fields": [
+      {
+        "key": "length",
+        "label": "총장",
+        "help": "허리 밴드 위에서 밑단까지의 길이",
+        "min": 70,
+        "max": 120
+      },
+      {
+        "key": "waist",
+        "label": "허리단면",
+        "help": "허리 밴드를 수평으로 잰 한쪽 면의 너비",
+        "min": 25,
+        "max": 55
+      },
+      {
+        "key": "hip",
+        "label": "엉덩이단면",
+        "help": "밑위 위쪽 가장 넓은 지점의 한쪽 면 너비",
+        "min": 35,
+        "max": 70
+      },
+      {
+        "key": "thigh",
+        "label": "허벅지단면",
+        "help": "밑위 아래 지점의 다리 한쪽 너비",
+        "min": 20,
+        "max": 50
+      },
+      {
+        "key": "rise",
+        "label": "밑위",
+        "help": "허리 밴드 위에서 밑위 봉제점까지의 길이",
+        "min": 20,
+        "max": 45
+      }
+    ],
+    "base": {
+      "length": 98,
+      "waist": 36,
+      "hip": 56,
+      "thigh": 35,
+      "rise": 32
+    },
+    "step": {
+      "length": 1,
+      "waist": 1.5,
+      "hip": 1.5,
+      "thigh": 1,
+      "rise": 0.5
+    },
+    "details": [
+      "코튼 80% 폴리에스터 20%",
+      "밴딩 허리 · 밑단 고무 처리",
+      "벌룬 핏"
+    ]
+  },
+  {
+    "id": "sweat-navy",
+    "name": "layered sweatpants (navy)",
+    "category": "bottom",
+    "sub": "Pants",
+    "image": "/13d1814c-89b6-4d34-bf54-4322f5dfc48b.jpg",
+    "colors": [
+      {
+        "id": "navy",
+        "name": "Navy",
+        "hex": "#2f3647"
+      },
+      {
+        "id": "grey",
+        "name": "Grey",
+        "hex": "#9a9ea6"
+      }
+    ],
+    "sizes": [
+      "26",
+      "27",
+      "28",
+      "29",
+      "30"
+    ],
+    "defaultSize": "28",
+    "fields": [
+      {
+        "key": "length",
+        "label": "총장",
+        "help": "허리 밴드 위에서 밑단까지의 길이",
+        "min": 70,
+        "max": 120
+      },
+      {
+        "key": "waist",
+        "label": "허리단면",
+        "help": "허리 밴드를 수평으로 잰 한쪽 면의 너비",
+        "min": 25,
+        "max": 55
+      },
+      {
+        "key": "hip",
+        "label": "엉덩이단면",
+        "help": "밑위 위쪽 가장 넓은 지점의 한쪽 면 너비",
+        "min": 35,
+        "max": 70
+      },
+      {
+        "key": "thigh",
+        "label": "허벅지단면",
+        "help": "밑위 아래 지점의 다리 한쪽 너비",
+        "min": 20,
+        "max": 50
+      },
+      {
+        "key": "rise",
+        "label": "밑위",
+        "help": "허리 밴드 위에서 밑위 봉제점까지의 길이",
+        "min": 20,
+        "max": 45
+      }
+    ],
+    "base": {
+      "length": 102,
+      "waist": 37,
+      "hip": 55,
+      "thigh": 34,
+      "rise": 33
+    },
+    "step": {
+      "length": 1,
+      "waist": 1.5,
+      "hip": 1.5,
+      "thigh": 1,
+      "rise": 0.5
+    },
+    "details": [
+      "코튼 100% 기모",
+      "레이어드 밴드 디테일",
+      "와이드 핏"
+    ]
+  },
+  {
+    "id": "denim-black-wide",
+    "name": "wide denim pants (black)",
+    "category": "bottom",
+    "sub": "Pants",
+    "image": "/983f0bb8-45b1-4c53-85a6-dbc809848923.jpg",
+    "colors": [
+      {
+        "id": "black",
+        "name": "Black",
+        "hex": "#2b2b2d"
+      }
+    ],
+    "sizes": [
+      "26",
+      "27",
+      "28",
+      "29",
+      "30"
+    ],
+    "defaultSize": "28",
+    "fields": [
+      {
+        "key": "length",
+        "label": "총장",
+        "help": "허리 밴드 위에서 밑단까지의 길이",
+        "min": 70,
+        "max": 120
+      },
+      {
+        "key": "waist",
+        "label": "허리단면",
+        "help": "허리 밴드를 수평으로 잰 한쪽 면의 너비",
+        "min": 25,
+        "max": 55
+      },
+      {
+        "key": "hip",
+        "label": "엉덩이단면",
+        "help": "밑위 위쪽 가장 넓은 지점의 한쪽 면 너비",
+        "min": 35,
+        "max": 70
+      },
+      {
+        "key": "thigh",
+        "label": "허벅지단면",
+        "help": "밑위 아래 지점의 다리 한쪽 너비",
+        "min": 20,
+        "max": 50
+      },
+      {
+        "key": "rise",
+        "label": "밑위",
+        "help": "허리 밴드 위에서 밑위 봉제점까지의 길이",
+        "min": 20,
+        "max": 45
+      }
+    ],
+    "base": {
+      "length": 106,
+      "waist": 40,
+      "hip": 56,
+      "thigh": 35,
+      "rise": 32
+    },
+    "step": {
+      "length": 1,
+      "waist": 1.5,
+      "hip": 1.5,
+      "thigh": 1,
+      "rise": 0.5
+    },
+    "details": [
+      "코튼 100%",
+      "논스트레치 데님",
+      "와이드 핏"
+    ]
+  },
+  {
+    "id": "jogger-balloon",
+    "name": "balloon jogger pants (grey)",
+    "category": "bottom",
+    "sub": "Pants",
+    "image": "/fba5ba5c-fcc4-4afd-acfd-25244202d7b4.jpg",
+    "colors": [
+      {
+        "id": "grey",
+        "name": "Grey",
+        "hex": "#a7aba3"
+      }
+    ],
+    "sizes": [
+      "26",
+      "27",
+      "28",
+      "29",
+      "30"
+    ],
+    "defaultSize": "28",
+    "fields": [
+      {
+        "key": "length",
+        "label": "총장",
+        "help": "허리 밴드 위에서 밑단까지의 길이",
+        "min": 70,
+        "max": 120
+      },
+      {
+        "key": "waist",
+        "label": "허리단면",
+        "help": "허리 밴드를 수평으로 잰 한쪽 면의 너비",
+        "min": 25,
+        "max": 55
+      },
+      {
+        "key": "hip",
+        "label": "엉덩이단면",
+        "help": "밑위 위쪽 가장 넓은 지점의 한쪽 면 너비",
+        "min": 35,
+        "max": 70
+      },
+      {
+        "key": "thigh",
+        "label": "허벅지단면",
+        "help": "밑위 아래 지점의 다리 한쪽 너비",
+        "min": 20,
+        "max": 50
+      },
+      {
+        "key": "rise",
+        "label": "밑위",
+        "help": "허리 밴드 위에서 밑위 봉제점까지의 길이",
+        "min": 20,
+        "max": 45
+      }
+    ],
+    "base": {
+      "length": 97,
+      "waist": 35,
+      "hip": 58,
+      "thigh": 36,
+      "rise": 32
+    },
+    "step": {
+      "length": 1,
+      "waist": 1.5,
+      "hip": 1.5,
+      "thigh": 1,
+      "rise": 0.5
+    },
+    "details": [
+      "코튼 80% 폴리에스터 20%",
+      "벌룬 핏"
+    ]
+  },
+  {
+    "id": "sweat-star",
+    "name": "star sweatpants (navy)",
+    "category": "bottom",
+    "sub": "Pants",
+    "image": "/13d1814c-89b6-4d34-bf54-4322f5dfc48b.jpg",
+    "colors": [
+      {
+        "id": "navy",
+        "name": "Navy",
+        "hex": "#2f3647"
+      }
+    ],
+    "sizes": [
+      "26",
+      "27",
+      "28",
+      "29",
+      "30"
+    ],
+    "defaultSize": "28",
+    "fields": [
+      {
+        "key": "length",
+        "label": "총장",
+        "help": "허리 밴드 위에서 밑단까지의 길이",
+        "min": 70,
+        "max": 120
+      },
+      {
+        "key": "waist",
+        "label": "허리단면",
+        "help": "허리 밴드를 수평으로 잰 한쪽 면의 너비",
+        "min": 25,
+        "max": 55
+      },
+      {
+        "key": "hip",
+        "label": "엉덩이단면",
+        "help": "밑위 위쪽 가장 넓은 지점의 한쪽 면 너비",
+        "min": 35,
+        "max": 70
+      },
+      {
+        "key": "thigh",
+        "label": "허벅지단면",
+        "help": "밑위 아래 지점의 다리 한쪽 너비",
+        "min": 20,
+        "max": 50
+      },
+      {
+        "key": "rise",
+        "label": "밑위",
+        "help": "허리 밴드 위에서 밑위 봉제점까지의 길이",
+        "min": 20,
+        "max": 45
+      }
+    ],
+    "base": {
+      "length": 101,
+      "waist": 37,
+      "hip": 55,
+      "thigh": 34,
+      "rise": 33
+    },
+    "step": {
+      "length": 1,
+      "waist": 1.5,
+      "hip": 1.5,
+      "thigh": 1,
+      "rise": 0.5
+    },
+    "details": [
+      "코튼 100% 기모",
+      "스타 자수 디테일"
+    ]
+  },
+  {
+    "id": "leather-pants",
+    "name": "leather pants (black)",
+    "category": "bottom",
+    "sub": "Pants",
+    "image": "/77cc2dbf-ab60-460a-a058-920ea3ee1f80.jpg",
+    "colors": [
+      {
+        "id": "black",
+        "name": "Black",
+        "hex": "#1f1f21"
+      },
+      {
+        "id": "brown",
+        "name": "Brown",
+        "hex": "#5a4536"
+      }
+    ],
+    "sizes": [
+      "26",
+      "27",
+      "28",
+      "29",
+      "30"
+    ],
+    "defaultSize": "28",
+    "fields": [
+      {
+        "key": "length",
+        "label": "총장",
+        "help": "허리 밴드 위에서 밑단까지의 길이",
+        "min": 70,
+        "max": 120
+      },
+      {
+        "key": "waist",
+        "label": "허리단면",
+        "help": "허리 밴드를 수평으로 잰 한쪽 면의 너비",
+        "min": 25,
+        "max": 55
+      },
+      {
+        "key": "hip",
+        "label": "엉덩이단면",
+        "help": "밑위 위쪽 가장 넓은 지점의 한쪽 면 너비",
+        "min": 35,
+        "max": 70
+      },
+      {
+        "key": "thigh",
+        "label": "허벅지단면",
+        "help": "밑위 아래 지점의 다리 한쪽 너비",
+        "min": 20,
+        "max": 50
+      },
+      {
+        "key": "rise",
+        "label": "밑위",
+        "help": "허리 밴드 위에서 밑위 봉제점까지의 길이",
+        "min": 20,
+        "max": 45
+      }
+    ],
+    "base": {
+      "length": 103,
+      "waist": 38,
+      "hip": 53,
+      "thigh": 32,
+      "rise": 30
+    },
+    "step": {
+      "length": 1,
+      "waist": 1.5,
+      "hip": 1.5,
+      "thigh": 1,
+      "rise": 0.5
+    },
+    "details": [
+      "폴리우레탄 100% (페이크 레더)",
+      "스트레이트 핏",
+      "안감 있음"
+    ]
+  },
+  {
+    "id": "denim-skirt",
+    "name": "denim long skirt (blue)",
+    "category": "bottom",
+    "sub": "Skirt",
+    "image": "/c6ba5035-ee37-4800-9092-844f902354ef.jpg",
+    "colors": [
+      {
+        "id": "blue",
+        "name": "Blue",
+        "hex": "#6c86ad"
+      }
+    ],
+    "sizes": [
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL"
+    ],
+    "defaultSize": "M",
+    "fields": [
+      {
+        "key": "length",
+        "label": "총장",
+        "help": "허리 밴드 위에서 밑단까지의 길이",
+        "min": 50,
+        "max": 110
+      },
+      {
+        "key": "waist",
+        "label": "허리단면",
+        "help": "허리 밴드를 수평으로 잰 한쪽 면의 너비",
+        "min": 25,
+        "max": 55
+      },
+      {
+        "key": "hip",
+        "label": "엉덩이단면",
+        "help": "가장 넓은 지점의 한쪽 면 너비",
+        "min": 35,
+        "max": 70
+      },
+      {
+        "key": "hem",
+        "label": "밑단단면",
+        "help": "밑단을 수평으로 잰 한쪽 면의 너비",
+        "min": 40,
+        "max": 90
+      }
+    ],
+    "base": {
+      "length": 86,
+      "waist": 36,
+      "hip": 50,
+      "hem": 62
+    },
+    "step": {
+      "length": 1,
+      "waist": 1.5,
+      "hip": 1.5,
+      "hem": 2
+    },
+    "details": [
+      "코튼 100%",
+      "A라인 롱 기장",
+      "뒷면 슬릿"
+    ]
+  },
+  {
+    "id": "vintage-tee",
+    "name": "vintage T-shirt",
+    "category": "top",
+    "sub": "T-shirts",
+    "image": "/27dc0219-4c20-4c82-a352-7580231bbc74.jpg",
+    "colors": [
+      {
+        "id": "white",
+        "name": "White",
+        "hex": "#f7f8f8"
+      },
+      {
+        "id": "black",
+        "name": "Black",
+        "hex": "#111111"
+      },
+      {
+        "id": "green",
+        "name": "Green",
+        "hex": "#3f7148"
+      },
+      {
+        "id": "blue",
+        "name": "Blue",
+        "hex": "#435b9a"
+      },
+      {
+        "id": "red",
+        "name": "Red",
+        "hex": "#a04949"
+      }
+    ],
+    "sizes": [
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL"
+    ],
+    "defaultSize": "M",
+    "fields": [
+      {
+        "key": "length",
+        "label": "총장",
+        "help": "뒷목 중심에서 밑단까지의 길이",
+        "min": 40,
+        "max": 100
+      },
+      {
+        "key": "shoulder",
+        "label": "어깨너비",
+        "help": "양쪽 어깨 봉제선 끝 사이의 길이",
+        "min": 40,
+        "max": 100
+      },
+      {
+        "key": "chest",
+        "label": "가슴단면",
+        "help": "겨드랑이 아래를 수평으로 잰 한쪽 면의 너비",
+        "min": 20,
+        "max": 80
+      },
+      {
+        "key": "hem",
+        "label": "밑단단면",
+        "help": "밑단을 수평으로 잰 한쪽 면의 너비",
+        "min": 40,
+        "max": 100
+      },
+      {
+        "key": "sleeve",
+        "label": "소매길이",
+        "help": "어깨 봉제선 끝에서 소매 끝까지의 길이",
+        "min": 40,
+        "max": 100
+      }
+    ],
+    "base": {
+      "length": 68,
+      "shoulder": 76,
+      "chest": 40,
+      "hem": 68,
+      "sleeve": 68
+    },
+    "step": {
+      "length": 2,
+      "shoulder": 2,
+      "chest": 2,
+      "hem": 2,
+      "sleeve": 1
+    },
+    "details": [
+      "코튼 100%",
+      "피그먼트 워싱",
+      "스타 프린트",
+      "박시 핏"
+    ]
+  },
+  {
+    "id": "stripe-shirt",
+    "name": "stripe oversized shirt",
+    "category": "top",
+    "sub": "Shirts",
+    "image": "/7644754d-53b7-44da-b8f5-58ba535d0528.jpg",
+    "colors": [
+      {
+        "id": "blue",
+        "name": "Blue stripe",
+        "hex": "#a9bfdc"
+      }
+    ],
+    "sizes": [
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL"
+    ],
+    "defaultSize": "M",
+    "fields": [
+      {
+        "key": "length",
+        "label": "총장",
+        "help": "뒷목 중심에서 밑단까지의 길이",
+        "min": 40,
+        "max": 100
+      },
+      {
+        "key": "shoulder",
+        "label": "어깨너비",
+        "help": "양쪽 어깨 봉제선 끝 사이의 길이",
+        "min": 40,
+        "max": 100
+      },
+      {
+        "key": "chest",
+        "label": "가슴단면",
+        "help": "겨드랑이 아래를 수평으로 잰 한쪽 면의 너비",
+        "min": 20,
+        "max": 80
+      },
+      {
+        "key": "hem",
+        "label": "밑단단면",
+        "help": "밑단을 수평으로 잰 한쪽 면의 너비",
+        "min": 40,
+        "max": 100
+      },
+      {
+        "key": "sleeve",
+        "label": "소매길이",
+        "help": "어깨 봉제선 끝에서 소매 끝까지의 길이",
+        "min": 40,
+        "max": 100
+      }
+    ],
+    "base": {
+      "length": 76,
+      "shoulder": 54,
+      "chest": 62,
+      "hem": 62,
+      "sleeve": 58
+    },
+    "step": {
+      "length": 2,
+      "shoulder": 2,
+      "chest": 2,
+      "hem": 2,
+      "sleeve": 1
+    },
+    "details": [
+      "코튼 100%",
+      "오버사이즈 핏"
+    ]
+  },
+  {
+    "id": "crew-knit",
+    "name": "crewneck knit (charcoal)",
+    "category": "top",
+    "sub": "Knit",
+    "image": "/2833a7f3-f86c-48b8-a9ab-a89919c893a0.jpg",
+    "colors": [
+      {
+        "id": "charcoal",
+        "name": "Charcoal",
+        "hex": "#4b4d52"
+      }
+    ],
+    "sizes": [
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL"
+    ],
+    "defaultSize": "M",
+    "fields": [
+      {
+        "key": "length",
+        "label": "총장",
+        "help": "뒷목 중심에서 밑단까지의 길이",
+        "min": 40,
+        "max": 100
+      },
+      {
+        "key": "shoulder",
+        "label": "어깨너비",
+        "help": "양쪽 어깨 봉제선 끝 사이의 길이",
+        "min": 40,
+        "max": 100
+      },
+      {
+        "key": "chest",
+        "label": "가슴단면",
+        "help": "겨드랑이 아래를 수평으로 잰 한쪽 면의 너비",
+        "min": 20,
+        "max": 80
+      },
+      {
+        "key": "hem",
+        "label": "밑단단면",
+        "help": "밑단을 수평으로 잰 한쪽 면의 너비",
+        "min": 40,
+        "max": 100
+      },
+      {
+        "key": "sleeve",
+        "label": "소매길이",
+        "help": "어깨 봉제선 끝에서 소매 끝까지의 길이",
+        "min": 40,
+        "max": 100
+      }
+    ],
+    "base": {
+      "length": 66,
+      "shoulder": 48,
+      "chest": 56,
+      "hem": 50,
+      "sleeve": 60
+    },
+    "step": {
+      "length": 2,
+      "shoulder": 2,
+      "chest": 2,
+      "hem": 2,
+      "sleeve": 1
+    },
+    "details": [
+      "울 90% 나일론 10%",
+      "세미 오버 핏"
+    ]
+  },
+  {
+    "id": "hood-zip",
+    "name": "hooded zip-up (grey)",
+    "category": "outerwear",
+    "sub": "Hooded zip-up",
+    "image": "/05b76dda-6c13-4d16-a147-3e8ab41887f2.jpg",
+    "colors": [
+      {
+        "id": "grey",
+        "name": "Melange grey",
+        "hex": "#a9abae"
+      }
+    ],
+    "sizes": [
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL"
+    ],
+    "defaultSize": "M",
+    "fields": [
+      {
+        "key": "length",
+        "label": "총장",
+        "help": "뒷목 중심에서 밑단까지의 길이",
+        "min": 40,
+        "max": 100
+      },
+      {
+        "key": "shoulder",
+        "label": "어깨너비",
+        "help": "양쪽 어깨 봉제선 끝 사이의 길이",
+        "min": 40,
+        "max": 100
+      },
+      {
+        "key": "chest",
+        "label": "가슴단면",
+        "help": "겨드랑이 아래를 수평으로 잰 한쪽 면의 너비",
+        "min": 20,
+        "max": 80
+      },
+      {
+        "key": "hem",
+        "label": "밑단단면",
+        "help": "밑단을 수평으로 잰 한쪽 면의 너비",
+        "min": 40,
+        "max": 100
+      },
+      {
+        "key": "sleeve",
+        "label": "소매길이",
+        "help": "어깨 봉제선 끝에서 소매 끝까지의 길이",
+        "min": 40,
+        "max": 100
+      }
+    ],
+    "base": {
+      "length": 70,
+      "shoulder": 52,
+      "chest": 60,
+      "hem": 52,
+      "sleeve": 60
+    },
+    "step": {
+      "length": 2,
+      "shoulder": 2,
+      "chest": 2,
+      "hem": 2,
+      "sleeve": 1
+    },
+    "details": [
+      "코튼 100% 기모",
+      "양방향 지퍼"
+    ]
+  },
+  {
+    "id": "short-down",
+    "name": "short down jacket (black)",
+    "category": "outerwear",
+    "sub": "Down",
+    "image": "/eb06b389-2c6a-4670-94bf-5b2ca84bec6a.jpg",
+    "colors": [
+      {
+        "id": "black",
+        "name": "Black",
+        "hex": "#202022"
+      }
+    ],
+    "sizes": [
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL"
+    ],
+    "defaultSize": "M",
+    "fields": [
+      {
+        "key": "length",
+        "label": "총장",
+        "help": "뒷목 중심에서 밑단까지의 길이",
+        "min": 40,
+        "max": 100
+      },
+      {
+        "key": "shoulder",
+        "label": "어깨너비",
+        "help": "양쪽 어깨 봉제선 끝 사이의 길이",
+        "min": 40,
+        "max": 100
+      },
+      {
+        "key": "chest",
+        "label": "가슴단면",
+        "help": "겨드랑이 아래를 수평으로 잰 한쪽 면의 너비",
+        "min": 20,
+        "max": 80
+      },
+      {
+        "key": "hem",
+        "label": "밑단단면",
+        "help": "밑단을 수평으로 잰 한쪽 면의 너비",
+        "min": 40,
+        "max": 100
+      },
+      {
+        "key": "sleeve",
+        "label": "소매길이",
+        "help": "어깨 봉제선 끝에서 소매 끝까지의 길이",
+        "min": 40,
+        "max": 100
+      }
+    ],
+    "base": {
+      "length": 64,
+      "shoulder": 54,
+      "chest": 66,
+      "hem": 60,
+      "sleeve": 62
+    },
+    "step": {
+      "length": 2,
+      "shoulder": 2,
+      "chest": 2,
+      "hem": 2,
+      "sleeve": 1
+    },
+    "details": [
+      "나일론 100%",
+      "덕다운 충전재",
+      "크롭 기장"
+    ]
+  },
+  {
+    "id": "work-jacket",
+    "name": "work jacket (olive)",
+    "category": "outerwear",
+    "sub": "Jacket",
+    "image": "/d044b018-e275-4279-9468-572d16504fb8.jpg",
+    "colors": [
+      {
+        "id": "olive",
+        "name": "Olive",
+        "hex": "#6b6a4a"
+      }
+    ],
+    "sizes": [
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL"
+    ],
+    "defaultSize": "M",
+    "fields": [
+      {
+        "key": "length",
+        "label": "총장",
+        "help": "뒷목 중심에서 밑단까지의 길이",
+        "min": 40,
+        "max": 100
+      },
+      {
+        "key": "shoulder",
+        "label": "어깨너비",
+        "help": "양쪽 어깨 봉제선 끝 사이의 길이",
+        "min": 40,
+        "max": 100
+      },
+      {
+        "key": "chest",
+        "label": "가슴단면",
+        "help": "겨드랑이 아래를 수평으로 잰 한쪽 면의 너비",
+        "min": 20,
+        "max": 80
+      },
+      {
+        "key": "hem",
+        "label": "밑단단면",
+        "help": "밑단을 수평으로 잰 한쪽 면의 너비",
+        "min": 40,
+        "max": 100
+      },
+      {
+        "key": "sleeve",
+        "label": "소매길이",
+        "help": "어깨 봉제선 끝에서 소매 끝까지의 길이",
+        "min": 40,
+        "max": 100
+      }
+    ],
+    "base": {
+      "length": 69,
+      "shoulder": 48,
+      "chest": 58,
+      "hem": 57,
+      "sleeve": 63
+    },
+    "step": {
+      "length": 2,
+      "shoulder": 2,
+      "chest": 2,
+      "hem": 2,
+      "sleeve": 1
+    },
+    "details": [
+      "코튼 트윌",
+      "박시 핏"
+    ]
+  },
+  {
+    "id": "puffer-grey",
+    "name": "hooded puffer (light grey)",
+    "category": "outerwear",
+    "sub": "Down",
+    "image": "/fe59e32d-02c6-410b-9cb2-3042bc95bcca.jpg",
+    "colors": [
+      {
+        "id": "grey",
+        "name": "Light grey",
+        "hex": "#c9ccd1"
+      }
+    ],
+    "sizes": [
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL"
+    ],
+    "defaultSize": "M",
+    "fields": [
+      {
+        "key": "length",
+        "label": "총장",
+        "help": "뒷목 중심에서 밑단까지의 길이",
+        "min": 40,
+        "max": 100
+      },
+      {
+        "key": "shoulder",
+        "label": "어깨너비",
+        "help": "양쪽 어깨 봉제선 끝 사이의 길이",
+        "min": 40,
+        "max": 100
+      },
+      {
+        "key": "chest",
+        "label": "가슴단면",
+        "help": "겨드랑이 아래를 수평으로 잰 한쪽 면의 너비",
+        "min": 20,
+        "max": 80
+      },
+      {
+        "key": "hem",
+        "label": "밑단단면",
+        "help": "밑단을 수평으로 잰 한쪽 면의 너비",
+        "min": 40,
+        "max": 100
+      },
+      {
+        "key": "sleeve",
+        "label": "소매길이",
+        "help": "어깨 봉제선 끝에서 소매 끝까지의 길이",
+        "min": 40,
+        "max": 100
+      }
+    ],
+    "base": {
+      "length": 68,
+      "shoulder": 52,
+      "chest": 64,
+      "hem": 60,
+      "sleeve": 63
+    },
+    "step": {
+      "length": 2,
+      "shoulder": 2,
+      "chest": 2,
+      "hem": 2,
+      "sleeve": 1
+    },
+    "details": [
+      "나일론 100%",
+      "덕다운 충전재",
+      "후드 탈부착 불가"
+    ]
+  },
+  {
+    "id": "flower-zip",
+    "name": "flower knit zip-up (navy)",
+    "category": "outerwear",
+    "sub": "Hooded zip-up",
+    "image": "/e5a45018-30a8-4504-a693-d33e247452e5.jpg",
+    "colors": [
+      {
+        "id": "navy",
+        "name": "Navy",
+        "hex": "#262c3d"
+      }
+    ],
+    "sizes": [
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL"
+    ],
+    "defaultSize": "M",
+    "fields": [
+      {
+        "key": "length",
+        "label": "총장",
+        "help": "뒷목 중심에서 밑단까지의 길이",
+        "min": 40,
+        "max": 100
+      },
+      {
+        "key": "shoulder",
+        "label": "어깨너비",
+        "help": "양쪽 어깨 봉제선 끝 사이의 길이",
+        "min": 40,
+        "max": 100
+      },
+      {
+        "key": "chest",
+        "label": "가슴단면",
+        "help": "겨드랑이 아래를 수평으로 잰 한쪽 면의 너비",
+        "min": 20,
+        "max": 80
+      },
+      {
+        "key": "hem",
+        "label": "밑단단면",
+        "help": "밑단을 수평으로 잰 한쪽 면의 너비",
+        "min": 40,
+        "max": 100
+      },
+      {
+        "key": "sleeve",
+        "label": "소매길이",
+        "help": "어깨 봉제선 끝에서 소매 끝까지의 길이",
+        "min": 40,
+        "max": 100
+      }
+    ],
+    "base": {
+      "length": 66,
+      "shoulder": 50,
+      "chest": 58,
+      "hem": 50,
+      "sleeve": 61
+    },
+    "step": {
+      "length": 2,
+      "shoulder": 2,
+      "chest": 2,
+      "hem": 2,
+      "sleeve": 1
+    },
+    "details": [
+      "아크릴 70% 울 30%",
+      "플라워 패치 디테일"
+    ]
+  },
+  {
+    "id": "graphic-sweat",
+    "name": "graphic sweatshirt (charcoal)",
+    "category": "top",
+    "sub": "Sweatshirt",
+    "image": "/9db3fa05-3b8f-40c4-9263-1a1c38c5264e.jpg",
+    "colors": [
+      {
+        "id": "charcoal",
+        "name": "Charcoal",
+        "hex": "#55565a"
+      }
+    ],
+    "sizes": [
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL"
+    ],
+    "defaultSize": "M",
+    "fields": [
+      {
+        "key": "length",
+        "label": "총장",
+        "help": "뒷목 중심에서 밑단까지의 길이",
+        "min": 40,
+        "max": 100
+      },
+      {
+        "key": "shoulder",
+        "label": "어깨너비",
+        "help": "양쪽 어깨 봉제선 끝 사이의 길이",
+        "min": 40,
+        "max": 100
+      },
+      {
+        "key": "chest",
+        "label": "가슴단면",
+        "help": "겨드랑이 아래를 수평으로 잰 한쪽 면의 너비",
+        "min": 20,
+        "max": 80
+      },
+      {
+        "key": "hem",
+        "label": "밑단단면",
+        "help": "밑단을 수평으로 잰 한쪽 면의 너비",
+        "min": 40,
+        "max": 100
+      },
+      {
+        "key": "sleeve",
+        "label": "소매길이",
+        "help": "어깨 봉제선 끝에서 소매 끝까지의 길이",
+        "min": 40,
+        "max": 100
+      }
+    ],
+    "base": {
+      "length": 70,
+      "shoulder": 56,
+      "chest": 62,
+      "hem": 52,
+      "sleeve": 58
+    },
+    "step": {
+      "length": 2,
+      "shoulder": 2,
+      "chest": 2,
+      "hem": 2,
+      "sleeve": 1
+    },
+    "details": [
+      "코튼 100% 피그먼트 워싱",
+      "스트라이프 립 넥"
+    ]
+  },
+  {
+    "id": "cap-burgundy",
+    "name": "T logo cap (burgundy)",
+    "category": "accessory",
+    "sub": "Cap",
+    "image": "/45a992ae-8b81-44a5-9240-64da847ea3a2.jpg",
+    "colors": [
+      {
+        "id": "burgundy",
+        "name": "Burgundy",
+        "hex": "#4e2a33"
+      }
+    ],
+    "sizes": [
+      "FREE"
+    ],
+    "defaultSize": "FREE",
+    "fields": [
+      {
+        "key": "head",
+        "label": "머리둘레",
+        "help": "조절 끈을 가장 넓힌 상태의 둘레",
+        "min": 50,
+        "max": 64
+      },
+      {
+        "key": "brim",
+        "label": "챙길이",
+        "help": "챙의 앞쪽 끝까지 길이",
+        "min": 5,
+        "max": 10
+      },
+      {
+        "key": "depth",
+        "label": "깊이",
+        "help": "정수리에서 밴드까지의 높이",
+        "min": 10,
+        "max": 18
+      }
+    ],
+    "base": {
+      "head": 58,
+      "brim": 7,
+      "depth": 13
+    },
+    "step": {},
+    "details": [
+      "코튼 100%",
+      "자수 패치",
+      "조절 끈"
+    ]
+  }
+]
