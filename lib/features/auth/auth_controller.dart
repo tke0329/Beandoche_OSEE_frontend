@@ -3,6 +3,10 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 
 import 'auth_api.dart';
+import 'kakao_gateway.dart';
+import 'kakao_gateway_stub.dart'
+    if (dart.library.js_interop) 'kakao_gateway_web.dart'
+    as platform;
 
 class AuthScope extends InheritedNotifier<AuthController> {
   const AuthScope({
@@ -16,8 +20,11 @@ class AuthScope extends InheritedNotifier<AuthController> {
 }
 
 class AuthController extends ChangeNotifier {
-  AuthController({AuthApi? api}) : _api = api ?? AuthApi();
+  AuthController({AuthApi? api, KakaoGateway? kakaoGateway})
+    : _api = api ?? AuthApi(),
+      _kakao = kakaoGateway ?? platform.createKakaoGateway();
   final AuthApi _api;
+  final KakaoGateway _kakao;
   AuthSession? _session;
   AuthSession? get session => _session;
   bool get isAuthenticated =>
@@ -28,13 +35,18 @@ class AuthController extends ChangeNotifier {
   bool _disposed = false;
   Timer? _expiry;
 
-  Future<void> loginWithGoogle(String idToken) async {
+  Future<void> loginWithGoogle(String idToken) =>
+      _login(() => _api.loginWithGoogle(idToken));
+
+  Future<void> loginWithKakao() => _login(_kakao.login);
+
+  Future<void> _login(Future<AuthSession> Function() authenticate) async {
     if (busy || _disposed || isAuthenticated) return;
     busy = true;
     error = null;
     notifyListeners();
     try {
-      final result = await _api.loginWithGoogle(idToken);
+      final result = await authenticate();
       if (_disposed) return;
       _session = result;
       _expiry?.cancel();
@@ -68,6 +80,7 @@ class AuthController extends ChangeNotifier {
   void dispose() {
     _disposed = true;
     _expiry?.cancel();
+    _kakao.cancel();
     _session = null;
     _api.close();
     super.dispose();

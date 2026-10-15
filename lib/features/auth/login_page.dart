@@ -58,6 +58,17 @@ class LoginPage extends StatelessWidget {
                       ),
                       const SizedBox(height: 20),
                       Center(child: GoogleLoginPanel(auth: auth)),
+                      const SizedBox(height: 14),
+                      FilledButton.icon(
+                        onPressed: auth.busy ? null : auth.loginWithKakao,
+                        style: FilledButton.styleFrom(
+                          backgroundColor: const Color(0xfffee500),
+                          foregroundColor: const Color(0xff191919),
+                          minimumSize: const Size(280, 44),
+                        ),
+                        icon: const Icon(Icons.chat_bubble, size: 18),
+                        label: const Text('카카오로 계속하기'),
+                      ),
                       if (auth.busy) ...[
                         const SizedBox(height: 20),
                         const LinearProgressIndicator(
