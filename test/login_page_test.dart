@@ -60,6 +60,14 @@ void main() {
     await login;
     expect(find.byType(LoginPage), findsNothing);
     expect(find.text('Before you buy,'), findsOneWidget);
+    await tester.tap(find.byTooltip('마이페이지'));
+    await tester.pumpAndSettle();
+    expect(find.text('내 계정'), findsOneWidget);
+    expect(find.text('회원 ID: 42'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await tester.tap(find.text('홈으로 돌아가기'));
+    await tester.pumpAndSettle();
+    expect(find.text('Before you buy,'), findsOneWidget);
     await tester.pump(const Duration(minutes: 16));
     await tester.pumpAndSettle();
     expect(find.byType(LoginPage), findsOneWidget);
