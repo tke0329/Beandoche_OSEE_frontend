@@ -65,6 +65,13 @@ void main() {
     expect(find.text('내 계정'), findsOneWidget);
     expect(find.text('회원 ID: 42'), findsOneWidget);
     expect(tester.takeException(), isNull);
+    tester.view.physicalSize = const Size(360, 740);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    await tester.ensureVisible(find.text('홈으로 돌아가기'));
     await tester.tap(find.text('홈으로 돌아가기'));
     await tester.pumpAndSettle();
     expect(find.text('Before you buy,'), findsOneWidget);

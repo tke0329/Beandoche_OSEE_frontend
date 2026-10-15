@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 
 import '../../features/auth/auth_controller.dart';
 import '../../features/auth/login_page.dart';
+import '../../features/profile/screens/mypage.dart';
 
 class OseeApp extends StatefulWidget {
   const OseeApp({super.key, this.initialStore, this.initialAuth});
@@ -118,6 +119,10 @@ class _OseeWorkspaceState extends State<_OseeWorkspace> {
                       FittingPage(store: store, open: open),
                       WardrobePage(store: store, open: open),
                       OutfitsPage(store: store, open: open),
+                      MyPage(
+                        userId: AuthScope.of(context).session!.userId,
+                        onHome: () => open(0),
+                      ),
                     ][page],
                   ),
                   if (wide && clothesMenuOpen)
@@ -132,7 +137,7 @@ class _OseeWorkspaceState extends State<_OseeWorkspace> {
                     ),
                 ],
               ),
-              bottomNavigationBar: wide
+              bottomNavigationBar: wide || page == 5
                   ? null
                   : NavigationBar(
                       selectedIndex: page,

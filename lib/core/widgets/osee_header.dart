@@ -42,13 +42,13 @@ class OseeHeader extends StatelessWidget {
               ),
             ),
             if (wide) ...[
-              for (var index = 1; index <= 5; index++) ...[
+              for (var index = 1; index <= 4; index++) ...[
                 if (index > 1) const SizedBox(width: 49),
                 MouseRegion(
                   onEnter: (_) =>
                       index == 1 ? onClothesHover() : onOtherHover(),
                   child: InkWell(
-                    onTap: index == 5 ? null : () => onNavigate(index),
+                    onTap: () => onNavigate(index),
                     child: Text(
                       const [
                         'HOME',
@@ -56,7 +56,6 @@ class OseeHeader extends StatelessWidget {
                         'FITTING ROOM',
                         'WARDROBE',
                         'OUTFITS',
-                        'FEED',
                       ][index],
                       style: TextStyle(
                         fontSize: 18,
@@ -71,14 +70,11 @@ class OseeHeader extends StatelessWidget {
               ],
             ],
             const Spacer(),
-            Container(
-              width: 44,
-              height: 44,
-              decoration: const BoxDecoration(
-                color: OseePalette.primary100,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
+            IconButton.filledTonal(
+              tooltip: '마이페이지',
+              isSelected: activePage == 5,
+              onPressed: () => onNavigate(5),
+              icon: const Icon(
                 Icons.person_outline,
                 color: OseePalette.primary700,
                 size: 27,
