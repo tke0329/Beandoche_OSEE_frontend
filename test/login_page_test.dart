@@ -9,10 +9,13 @@ import 'package:beandoche_osee_frontend/core/providers/osee_store.dart';
 import 'package:beandoche_osee_frontend/features/auth/auth_api.dart';
 import 'package:beandoche_osee_frontend/features/auth/auth_controller.dart';
 import 'package:beandoche_osee_frontend/features/auth/login_page.dart';
+
 import 'auth_test.dart' show sessionJson;
 
 void main() {
-  testWidgets('t1 signed-out launch shows login before personal pages', (tester) async {
+  testWidgets('t1 signed-out launch shows login before personal pages', (
+    tester,
+  ) async {
     await tester.pumpWidget(const OseeApp());
     await tester.pumpAndSettle();
     expect(find.text('나에게 맞는 옷을 만나는 시작'), findsOneWidget);
@@ -22,7 +25,12 @@ void main() {
   });
 
   testWidgets('t2 rejected login displays safe retry message', (tester) async {
-    final auth = AuthController(api: AuthApi(baseUrl: 'http://localhost:8080', client: MockClient((_) async => http.Response('private-detail', 401))));
+    final auth = AuthController(
+      api: AuthApi(
+        baseUrl: 'http://localhost:8080',
+        client: MockClient((_) async => http.Response('private-detail', 401)),
+      ),
+    );
     await tester.pumpWidget(MaterialApp(home: LoginPage(auth: auth)));
     await tester.runAsync(() => auth.loginWithGoogle('invalid-token'));
     await tester.pumpAndSettle();
@@ -34,16 +42,29 @@ void main() {
   });
 
   testWidgets('t3 backend login success opens existing home', (tester) async {
-    final auth = AuthController(api: AuthApi(baseUrl: 'http://localhost:8080', client: MockClient((_) async => http.Response(jsonEncode(sessionJson()), 200))));
+    final auth = AuthController(
+      api: AuthApi(
+        baseUrl: 'http://localhost:8080',
+        client: MockClient(
+          (_) async => http.Response(jsonEncode(sessionJson()), 200),
+        ),
+      ),
+    );
     final store = OseeStore();
     await tester.runAsync(store.initialize);
     await tester.pumpWidget(OseeApp(initialStore: store, initialAuth: auth));
     await tester.pumpAndSettle();
     expect(find.byType(LoginPage), findsOneWidget);
-    await tester.runAsync(() => auth.loginWithGoogle('valid-token'));
+    final login = auth.loginWithGoogle('valid-token');
     await tester.pumpAndSettle();
+    await login;
     expect(find.byType(LoginPage), findsNothing);
     expect(find.text('Before you buy,'), findsOneWidget);
+    await tester.pump(const Duration(minutes: 16));
+    await tester.pumpAndSettle();
+    expect(find.byType(LoginPage), findsOneWidget);
+    expect(find.text('Before you buy,'), findsNothing);
+    expect(find.textContaining('로그인이 만료되었습니다.'), findsOneWidget);
     await tester.pumpWidget(const SizedBox());
     auth.dispose();
     store.dispose();
