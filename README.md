@@ -38,6 +38,18 @@ flutter build web --dart-define-from-file=.env.json
 
 A new Flutter project.
 
+## 카카오 웹 로그인
+
+- 백엔드의 로컬 `.env`에 `KAKAO_OAUTH_REST_API_KEY`, `KAKAO_OAUTH_CLIENT_SECRET`을 설정한다. 프론트에 키를 복사하지 않는다.
+- 카카오 로그인 활성화 후 Redirect URI를 `http://localhost:8080/api/auth/social/kakao/callback`으로 등록한다.
+- 프론트는 기존 `.env.json`의 `OSEE_API_BASE_URL`로 팝업을 연다. 기본 주소는 `http://localhost:8080`이다.
+- 배포에서는 백엔드 `OSEE_FRONTEND_ORIGIN`을 정확한 프론트 원본으로 지정하고 HTTPS를 사용한다. localhost와 127.0.0.1을 혼용하지 않는다.
+- 카카오로 계속하기 → 카카오 인증 팝업 → 서버 검증 → 홈 순서다. 팝업 차단 시 브라우저에서 허용한다.
+- state는 브라우저에 바인딩된 5분 일회성 값이며 서버 재시작 시 무효화된다. 다중 서버 배포 전에는 공유 저장소로 전환해야 한다.
+- 현재 카카오 역시 메모리 인증이다. 실제 카카오 로그인 성공 확인 후 48시간 쿠키 기반 세션 유지, 프로필 입력, 마이페이지 개선을 이어서 적용한다.
+
+공식 REST 흐름: [카카오 로그인 REST API](https://developers.kakao.com/docs/ko/kakaologin/rest-api)
+
 ## Getting Started
 
 This project is a starting point for a Flutter application.
