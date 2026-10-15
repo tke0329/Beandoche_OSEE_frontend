@@ -1,4 +1,9 @@
 # Miscellaneous
+# Local OAuth/build configuration (keep the shared example under config/).
+.env
+.env.*
+!.env.example
+
 *.class
 *.log
 *.pyc
