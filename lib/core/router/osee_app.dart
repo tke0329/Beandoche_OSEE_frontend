@@ -13,6 +13,10 @@ import 'package:flutter/material.dart';
 import '../../features/auth/auth_controller.dart';
 import '../../features/auth/login_page.dart';
 import '../../features/profile/screens/mypage.dart';
+import '../../features/profile/screens/profile_form_page.dart';
+import '../../features/profile/screens/body_setup_page.dart';
+
+import 'dart:async';
 
 class OseeApp extends StatefulWidget {
   const OseeApp({super.key, this.initialStore, this.initialAuth});
@@ -23,10 +27,30 @@ class OseeApp extends StatefulWidget {
 }
 
 class _OseeAppState extends State<OseeApp> {
+  final navigator = GlobalKey<NavigatorState>();
+  bool previouslyAuthenticated = false;
   late final AuthController auth = widget.initialAuth ?? AuthController();
 
   @override
+  void initState() {
+    super.initState();
+    previouslyAuthenticated = auth.isAuthenticated;
+    auth.addListener(onAuthChanged);
+    if (widget.initialAuth == null) unawaited(auth.restore());
+  }
+
+  void onAuthChanged() {
+    if (previouslyAuthenticated && !auth.isAuthenticated) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) navigator.currentState?.popUntil((route) => route.isFirst);
+      });
+    }
+    previouslyAuthenticated = auth.isAuthenticated;
+  }
+
+  @override
   void dispose() {
+    auth.removeListener(onAuthChanged);
     if (widget.initialAuth == null) auth.dispose();
     super.dispose();
   }
@@ -35,14 +59,53 @@ class _OseeAppState extends State<OseeApp> {
   Widget build(BuildContext context) => AuthScope(
     controller: auth,
     child: MaterialApp(
+      navigatorKey: navigator,
       title: 'OSEE',
       debugShowCheckedModeBanner: false,
       theme: oseeTheme,
       home: ListenableBuilder(
         listenable: auth,
-        builder: (context, _) => auth.isAuthenticated
-            ? _OseeWorkspace(initialStore: widget.initialStore)
-            : LoginPage(auth: auth),
+        builder: (context, _) {
+          if (auth.restoring && auth.session == null) {
+            return const Scaffold(
+              body: Center(
+                child: CircularProgressIndicator(semanticsLabel: '로그인 상태 확인 중'),
+              ),
+            );
+          }
+          if (!auth.isAuthenticated) return LoginPage(auth: auth);
+          if (auth.profile == null) {
+            return Scaffold(
+              body: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (auth.busy)
+                      const CircularProgressIndicator()
+                    else ...[
+                      Text(auth.error ?? '프로필을 확인하지 못했습니다.'),
+                      TextButton(
+                        onPressed: auth.reloadProfile,
+                        child: const Text('다시 시도'),
+                      ),
+                      TextButton(
+                        onPressed: auth.logout,
+                        child: const Text('로그아웃'),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            );
+          }
+          if (!auth.profile!.completed) {
+            return ProfileFormPage(auth: auth, initial: true);
+          }
+          if (auth.showBodyStep) {
+            return BodySetupPage(onNext: auth.finishBodyStep);
+          }
+          return _OseeWorkspace(initialStore: widget.initialStore);
+        },
       ),
     ),
   );

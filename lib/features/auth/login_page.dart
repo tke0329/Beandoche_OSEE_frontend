@@ -80,6 +80,14 @@ class LoginPage extends StatelessWidget {
                           textAlign: TextAlign.center,
                         ),
                       ],
+                      const Padding(
+                        padding: EdgeInsets.only(top: 18),
+                        child: Text(
+                          '로그인은 최초 로그인부터 최대 48시간 유지됩니다.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: faded, fontSize: 12),
+                        ),
+                      ),
                       if (auth.error != null) ...[
                         const SizedBox(height: 20),
                         Semantics(
@@ -93,9 +101,16 @@ class LoginPage extends StatelessWidget {
                           ),
                         ),
                       ],
+                      if (auth.error != null)
+                        TextButton(
+                          onPressed: auth.busy || auth.restoring
+                              ? null
+                              : auth.restore,
+                          child: const Text('로그인 상태 다시 확인'),
+                        ),
                       const SizedBox(height: 24),
                       const Text(
-                        '처음 로그인하면 OSEE 계정이 자동으로 생성됩니다.',
+                        '처음이라면 닉네임을 설정하고 시작해요.\n프로필 사진은 나중에 추가해도 괜찮아요.',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: faded,

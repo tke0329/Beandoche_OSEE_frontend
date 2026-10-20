@@ -2,6 +2,8 @@ import 'package:beandoche_osee_frontend/core/theme/osee_theme.dart';
 
 import 'package:flutter/material.dart';
 
+import '../../features/profile/profile_menu.dart';
+
 class OseeHeader extends StatelessWidget {
   const OseeHeader({
     super.key,
@@ -70,16 +72,7 @@ class OseeHeader extends StatelessWidget {
               ],
             ],
             const Spacer(),
-            IconButton.filledTonal(
-              tooltip: '마이페이지',
-              isSelected: activePage == 5,
-              onPressed: () => onNavigate(5),
-              icon: const Icon(
-                Icons.person_outline,
-                color: OseePalette.primary700,
-                size: 27,
-              ),
-            ),
+            ProfileMenu(onProfile: () => onNavigate(5)),
           ],
         ),
       ),
