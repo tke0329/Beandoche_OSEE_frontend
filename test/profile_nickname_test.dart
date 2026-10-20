@@ -20,8 +20,9 @@ void main() {
       final auth = AuthController(
         api: AuthApi(
           client: MockClient((request) async {
-            if (request.url.path.endsWith('/nickname-availability'))
+            if (request.url.path.endsWith('/nickname-availability')) {
               return pending.future;
+            }
             return utf8Response(
               jsonEncode(
                 request.method == 'GET'
