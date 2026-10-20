@@ -30,6 +30,7 @@ class GoogleLoginPanel extends StatefulWidget {
 class _GoogleLoginPanelState extends State<GoogleLoginPanel> {
   StreamSubscription<GoogleSignInAuthenticationEvent>? _subscription;
   Widget? _button;
+  double? _buttonWidth;
   String? _setupError;
   bool _loading = true;
 
@@ -83,9 +84,7 @@ class _GoogleLoginPanelState extends State<GoogleLoginPanel> {
           );
         },
       );
-      final button = platform.buildGoogleButton();
       setState(() {
-        _button = button;
         _loading = false;
       });
     } catch (_) {
@@ -119,9 +118,22 @@ class _GoogleLoginPanelState extends State<GoogleLoginPanel> {
         ],
       );
     }
-    return AbsorbPointer(
-      absorbing: widget.auth.busy,
-      child: ExcludeFocus(excluding: widget.auth.busy, child: _button!),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth.clamp(1.0, 400.0);
+        if (_button == null || _buttonWidth != width) {
+          _buttonWidth = width;
+          _button = platform.buildGoogleButton(width);
+        }
+        return SizedBox(
+          width: width,
+          height: 40,
+          child: AbsorbPointer(
+            absorbing: widget.auth.busy,
+            child: ExcludeFocus(excluding: widget.auth.busy, child: _button!),
+          ),
+        );
+      },
     );
   }
 }

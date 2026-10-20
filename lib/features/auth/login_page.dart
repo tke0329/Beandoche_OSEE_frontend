@@ -67,14 +67,18 @@ class LoginPage extends StatelessWidget {
                         style: TextStyle(fontWeight: FontWeight.w600),
                       ),
                       const SizedBox(height: 20),
-                      Center(child: GoogleLoginPanel(auth: auth)),
+                      GoogleLoginPanel(auth: auth),
                       const SizedBox(height: 14),
                       FilledButton.icon(
+                        key: const ValueKey('kakao-login-button'),
                         onPressed: auth.busy ? null : auth.loginWithKakao,
                         style: FilledButton.styleFrom(
                           backgroundColor: const Color(0xfffee500),
                           foregroundColor: const Color(0xff191919),
-                          minimumSize: const Size(280, 44),
+                          minimumSize: const Size(0, 40),
+                          fixedSize: const Size.fromHeight(40),
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          shape: const StadiumBorder(),
                         ),
                         icon: const Icon(Icons.chat_bubble, size: 18),
                         label: const Text('카카오로 계속하기'),
@@ -120,7 +124,7 @@ class LoginPage extends StatelessWidget {
                         ),
                       const SizedBox(height: 24),
                       const Text(
-                        '처음이라면 닉네임을 설정하고 시작해요.\n프로필 사진은 나중에 추가해도 괜찮아요.',
+                        '닉네임을 비우면 OSEE_랜덤번호로 시작해요.\n프로필 사진은 나중에 추가해도 괜찮아요.',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: faded,
