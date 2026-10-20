@@ -57,6 +57,23 @@ class _ProfileMenuState extends State<ProfileMenu> {
   Widget build(BuildContext context) {
     final auth = AuthScope.of(context);
     final profile = auth.profile;
+    if (!auth.isAuthenticated) {
+      return Tooltip(
+        message: auth.restoring ? '로그인 상태 확인 중' : '로그인',
+        child: TextButton.icon(
+          onPressed: auth.restoring ? null : widget.onProfile,
+          icon: auth.restoring
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const ProfileAvatar(radius: 20),
+          label: Text(auth.restoring ? '확인 중' : '로그인'),
+          style: TextButton.styleFrom(padding: const EdgeInsets.all(8)),
+        ),
+      );
+    }
     return CompositedTransformTarget(
       link: link,
       child: OverlayPortal(
@@ -102,8 +119,6 @@ class _ProfileMenuState extends State<ProfileMenu> {
                           ],
                         ),
                         const SizedBox(height: 12),
-                        Text('회원 ID: ${auth.session?.userId ?? ''}'),
-                        const SizedBox(height: 8),
                         const Text('체형정보 · 준비 중'),
                         const Divider(height: 28),
                         TextButton.icon(
@@ -129,10 +144,10 @@ class _ProfileMenuState extends State<ProfileMenu> {
           onExit: (_) => later(),
           child: Focus(
             onFocusChange: (focused) => focused ? show() : later(),
-            child: IconButton.filledTonal(
+            child: IconButton(
               tooltip: '마이페이지',
               onPressed: openProfile,
-              icon: ProfileAvatar(image: profile?.image, radius: 18),
+              icon: ProfileAvatar(image: profile?.image, radius: 22),
             ),
           ),
         ),

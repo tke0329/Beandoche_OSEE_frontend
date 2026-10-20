@@ -5,8 +5,9 @@ import 'auth_controller.dart';
 import 'google_login_panel.dart';
 
 class LoginPage extends StatelessWidget {
-  const LoginPage({super.key, required this.auth});
+  const LoginPage({super.key, required this.auth, this.onHome});
   final AuthController auth;
+  final VoidCallback? onHome;
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -25,6 +26,15 @@ class LoginPage extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      if (onHome != null)
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: TextButton.icon(
+                            onPressed: onHome,
+                            icon: const Icon(Icons.arrow_back),
+                            label: const Text('홈으로 돌아가기'),
+                          ),
+                        ),
                       const Text(
                         'OSEE',
                         style: TextStyle(

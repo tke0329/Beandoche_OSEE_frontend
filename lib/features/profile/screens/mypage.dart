@@ -7,8 +7,7 @@ import 'profile_form_page.dart';
 import 'body_setup_page.dart';
 
 class MyPage extends StatelessWidget {
-  const MyPage({super.key, required this.userId, required this.onHome});
-  final int userId;
+  const MyPage({super.key, required this.onHome});
   final VoidCallback onHome;
 
   @override
@@ -47,11 +46,6 @@ class MyPage extends StatelessWidget {
                           fontSize: 24,
                           fontWeight: FontWeight.w700,
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '회원 ID: $userId',
-                        style: const TextStyle(color: faded),
                       ),
                       if (profile?.nextNicknameChange != null)
                         Padding(

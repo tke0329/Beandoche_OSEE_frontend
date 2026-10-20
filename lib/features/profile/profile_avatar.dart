@@ -2,6 +2,8 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 
+import '../../core/theme/osee_theme.dart';
+
 class ProfileAvatar extends StatelessWidget {
   const ProfileAvatar({super.key, this.image, this.radius = 24});
   final Uint8List? image;
@@ -11,15 +13,22 @@ class ProfileAvatar extends StatelessWidget {
     child: Container(
       width: radius * 2,
       height: radius * 2,
-      color: Theme.of(context).colorScheme.primaryContainer,
+      color: OseePalette.primary100,
       child: image == null
-          ? Icon(Icons.person_outline, size: radius * 1.1)
+          ? Icon(
+              Icons.person_outline,
+              color: OseePalette.primary700,
+              size: radius * 1.25,
+            )
           : Image.memory(
               image!,
               fit: BoxFit.cover,
               gaplessPlayback: true,
-              errorBuilder: (_, _, _) =>
-                  Icon(Icons.person_outline, size: radius * 1.1),
+              errorBuilder: (_, _, _) => Icon(
+                Icons.person_outline,
+                color: OseePalette.primary700,
+                size: radius * 1.25,
+              ),
             ),
     ),
   );
