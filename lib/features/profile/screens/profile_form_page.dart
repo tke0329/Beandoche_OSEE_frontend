@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'dart:async';
 
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
@@ -30,6 +31,36 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
   bool removeImage = false;
   bool selecting = false;
   String? localError;
+  Timer? nicknameTimer;
+  int nicknameVersion = 0;
+  bool checkingNickname = false;
+  String? nicknameProblem;
+
+  void checkNickname(String value) {
+    nicknameTimer?.cancel();
+    final version = ++nicknameVersion;
+    widget.auth.clearNicknameError();
+    final trimmed = value.trim();
+    setState(() {
+      checkingNickname = false;
+      nicknameProblem = null;
+      if (widget.initial && trimmed.isEmpty) return;
+      if (!RegExp(r'^[가-힣A-Za-z0-9_]{2,20}$').hasMatch(trimmed)) {
+        nicknameProblem = '닉네임은 한글·영문·숫자·밑줄 2~20자로 입력해 주세요.';
+      } else {
+        checkingNickname = true;
+      }
+    });
+    if (!checkingNickname) return;
+    nicknameTimer = Timer(const Duration(milliseconds: 350), () async {
+      final problem = await widget.auth.checkNickname(trimmed);
+      if (!mounted || version != nicknameVersion) return;
+      setState(() {
+        checkingNickname = false;
+        nicknameProblem = problem;
+      });
+    });
+  }
 
   Future<void> chooseImage() async {
     setState(() {
@@ -67,6 +98,11 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
   }
 
   Future<void> submit() async {
+    if (checkingNickname ||
+        nicknameProblem != null ||
+        widget.auth.nicknameError != null) {
+      return;
+    }
     if (!form.currentState!.validate()) return;
     final saved = await widget.auth.saveProfile(
       nickname.text.trim(),
@@ -79,6 +115,8 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
 
   @override
   void dispose() {
+    nicknameTimer?.cancel();
+    nicknameVersion++;
     nickname.dispose();
     super.dispose();
   }
@@ -87,9 +125,6 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
   Widget build(BuildContext context) => ListenableBuilder(
     listenable: widget.auth,
     builder: (context, _) {
-      final next = widget.auth.profile?.nextNicknameChange;
-      final nicknameLocked =
-          !widget.initial && next != null && next.isAfter(DateTime.now());
       final busy = widget.auth.busy || selecting;
       return Scaffold(
         appBar: AppBar(
@@ -120,7 +155,11 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    const Text('OSEE에서 사용할 닉네임을 정해 주세요. 사진은 나중에 추가해도 괜찮아요.'),
+                    Text(
+                      widget.initial
+                          ? '닉네임을 비우면 OSEE_랜덤번호로 만들어 드려요. 사진도 선택 사항이에요.'
+                          : 'OSEE에서 사용할 닉네임과 프로필 사진을 관리해요.',
+                    ),
                     const SizedBox(height: 32),
                     Center(
                       child: ProfileAvatar(
@@ -149,22 +188,44 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
                     const SizedBox(height: 24),
                     TextFormField(
                       controller: nickname,
-                      enabled: !busy && !nicknameLocked,
+                      enabled: !busy,
                       maxLength: 20,
-                      decoration: const InputDecoration(
+                      autovalidateMode: AutovalidateMode.onUserInteraction,
+                      onChanged: checkNickname,
+                      decoration: InputDecoration(
                         labelText: '닉네임',
-                        helperText: '한글·영문·숫자·밑줄 2~20자',
-                        border: OutlineInputBorder(),
+                        helperText: widget.initial
+                            ? '선택 · 비우면 자동 생성 / 한글·영문·숫자·밑줄 2~20자'
+                            : '한글·영문·숫자·밑줄 2~20자',
+                        helperMaxLines: 2,
+                        errorText: nicknameProblem ?? widget.auth.nicknameError,
+                        errorStyle: const TextStyle(color: Color(0xffb3261e)),
+                        errorBorder: const OutlineInputBorder(
+                          borderSide: BorderSide(color: Color(0xffb3261e)),
+                        ),
+                        focusedErrorBorder: const OutlineInputBorder(
+                          borderSide: BorderSide(
+                            color: Color(0xffb3261e),
+                            width: 2,
+                          ),
+                        ),
+                        border: const OutlineInputBorder(),
                       ),
                       validator: (value) =>
-                          RegExp(r'^[가-힣A-Za-z0-9_]{2,20}$')
-                              .hasMatch((value ?? '').trim())
+                          (widget.initial && (value ?? '').trim().isEmpty) ||
+                              RegExp(r'^[가-힣A-Za-z0-9_]{2,20}$')
+                                  .hasMatch((value ?? '').trim())
                           ? null
                           : '닉네임 형식을 확인해 주세요.',
                     ),
-                    if (nicknameLocked)
-                      Text(
-                        '다음 닉네임 변경: ${next.toLocal().toString().split('.').first}',
+                    if (checkingNickname)
+                      const Text('닉네임을 확인하고 있어요.', semanticsLabel: '닉네임 확인 중'),
+                    if (nicknameProblem != null)
+                      TextButton(
+                        onPressed: busy
+                            ? null
+                            : () => checkNickname(nickname.text),
+                        child: const Text('닉네임 다시 확인'),
                       ),
                     if (localError != null || widget.auth.error != null)
                       Padding(
@@ -181,7 +242,13 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
                       ),
                     const SizedBox(height: 24),
                     FilledButton(
-                      onPressed: busy ? null : submit,
+                      onPressed:
+                          busy ||
+                              checkingNickname ||
+                              nicknameProblem != null ||
+                              widget.auth.nicknameError != null
+                          ? null
+                          : submit,
                       child: Text(
                         busy
                             ? '저장 중…'

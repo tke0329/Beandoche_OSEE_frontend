@@ -47,13 +47,6 @@ class MyPage extends StatelessWidget {
                           fontWeight: FontWeight.w700,
                         ),
                       ),
-                      if (profile?.nextNicknameChange != null)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 12),
-                          child: Text(
-                            '다음 닉네임 변경: ${profile!.nextNicknameChange!.toLocal().toString().split('.').first}',
-                          ),
-                        ),
                       const SizedBox(height: 20),
                       OutlinedButton(
                         onPressed: auth.busy

@@ -11,9 +11,10 @@ import 'credential_client_stub.dart'
     as transport;
 
 class AuthFailure implements Exception {
-  const AuthFailure(this.message, {this.status});
+  const AuthFailure(this.message, {this.status, this.code});
   final String message;
   final int? status;
+  final String? code;
 }
 
 class AuthSession {
@@ -167,17 +168,20 @@ class AuthApi {
     } on FormatException {
       code = null;
     }
-    throw AuthFailure(switch (code) {
-      'NICKNAME_ALREADY_EXISTS' => '이미 사용 중인 닉네임입니다.',
-      'NICKNAME_CHANGE_NOT_ALLOWED' =>
-        '닉네임은 30일마다 변경할 수 있습니다. 다음 변경 가능 일시를 확인해 주세요.',
-      'INVALID_NICKNAME' => '닉네임은 한글·영문·숫자·밑줄 2~20자로 입력해 주세요.',
-      'INVALID_PROFILE_IMAGE' => '1MB 이하의 올바른 PNG 또는 JPEG 이미지를 선택해 주세요.',
-      _ =>
-        response.statusCode == 401
-            ? '로그인이 만료되었습니다. 다시 로그인해 주세요.'
-            : '요청을 처리하지 못했습니다. 다시 시도해 주세요.',
-    }, status: response.statusCode);
+    throw AuthFailure(
+      switch (code) {
+        'NICKNAME_ALREADY_EXISTS' => '중복된 닉네임입니다.',
+        'INVALID_NICKNAME' => '닉네임은 한글·영문·숫자·밑줄 2~20자로 입력해 주세요.',
+        'NICKNAME_NOT_ALLOWED' => '욕설이나 성적인 표현은 닉네임으로 사용할 수 없습니다.',
+        'INVALID_PROFILE_IMAGE' => '1MB 이하의 올바른 PNG 또는 JPEG 이미지를 선택해 주세요.',
+        _ =>
+          response.statusCode == 401
+              ? '로그인이 만료되었습니다. 다시 로그인해 주세요.'
+              : '요청을 처리하지 못했습니다. 다시 시도해 주세요.',
+      },
+      status: response.statusCode,
+      code: code,
+    );
   }
 
   Future<AuthSession?> restore() => _safe(() async {
@@ -199,6 +203,27 @@ class AuthApi {
       ),
     ),
   );
+
+  Future<String?> checkNickname(String accessToken, String nickname) =>
+      _safe(() async {
+        final body = _read(
+          await _client.get(
+            _uri('/api/users/me/nickname-availability')
+                .replace(queryParameters: {'nickname': nickname}),
+            headers: {'Authorization': 'Bearer $accessToken'},
+          ),
+        );
+        if (body case {'available': true}) return null;
+        if (body case {'available': false, 'code': String code}) {
+          return switch (code) {
+            'NICKNAME_ALREADY_EXISTS' => '중복된 닉네임입니다.',
+            'INVALID_NICKNAME' => '닉네임은 한글·영문·숫자·밑줄 2~20자로 입력해 주세요.',
+            'NICKNAME_NOT_ALLOWED' => '욕설이나 성적인 표현은 닉네임으로 사용할 수 없습니다.',
+            _ => '닉네임을 확인하지 못했습니다. 다시 시도해 주세요.',
+          };
+        }
+        throw const FormatException('Invalid nickname availability response');
+      });
 
   Future<ProfileData> saveProfile(
     String accessToken,

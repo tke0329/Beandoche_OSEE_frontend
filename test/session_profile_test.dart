@@ -121,6 +121,9 @@ void main() {
         api: AuthApi(
           client: MockClient((r) async {
             if (r.method == 'PUT') completed = true;
+            if (r.url.path.endsWith('/nickname-availability')) {
+              return utf8Response('{"available":true}', 200);
+            }
             return utf8Response(
               jsonEncode(
                 r.url.path.endsWith('/google')
@@ -139,6 +142,8 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('프로필 만들기'), findsOneWidget);
       await tester.enterText(find.byType(TextFormField), '테스트회원');
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pumpAndSettle();
       await tester.ensureVisible(find.text('다음'));
       await tester.tap(find.text('다음'));
       await tester.pumpAndSettle();

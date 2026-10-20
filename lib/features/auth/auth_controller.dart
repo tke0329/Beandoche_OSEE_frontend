@@ -36,6 +36,7 @@ class AuthController extends ChangeNotifier {
   bool restoring = false;
   bool showBodyStep = false;
   String? error;
+  String? nicknameError;
   bool _disposed = false;
   Timer? _expiry;
   Future<void>? _restoration;
@@ -169,6 +170,7 @@ class AuthController extends ChangeNotifier {
     final initial = !(profile?.completed ?? false);
     busy = true;
     error = null;
+    nicknameError = null;
     notifyListeners();
     try {
       final saved = await _api.saveProfile(
@@ -183,7 +185,15 @@ class AuthController extends ChangeNotifier {
       showBodyStep = initial;
       return true;
     } on AuthFailure catch (failure) {
-      if (!_disposed) error = failure.message;
+      if (!_disposed) {
+        if (failure.code == 'NICKNAME_ALREADY_EXISTS' ||
+            failure.code == 'NICKNAME_NOT_ALLOWED' ||
+            failure.code == 'INVALID_NICKNAME') {
+          nicknameError = failure.message;
+        } else {
+          error = failure.message;
+        }
+      }
       return false;
     } catch (_) {
       if (!_disposed) error = '프로필을 저장하지 못했습니다. 다시 시도해 주세요.';
@@ -193,6 +203,24 @@ class AuthController extends ChangeNotifier {
         busy = false;
         notifyListeners();
       }
+    }
+  }
+
+  void clearNicknameError() {
+    if (!_disposed && nicknameError != null) {
+      nicknameError = null;
+      notifyListeners();
+    }
+  }
+
+  Future<String?> checkNickname(String nickname) async {
+    if (!isAuthenticated) return '로그인 상태를 다시 확인해 주세요.';
+    try {
+      return await _api.checkNickname(_session!.accessToken, nickname);
+    } on AuthFailure catch (failure) {
+      return failure.message;
+    } catch (_) {
+      return '닉네임을 확인하지 못했습니다. 다시 시도해 주세요.';
     }
   }
 
