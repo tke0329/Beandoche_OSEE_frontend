@@ -10,10 +10,51 @@ import 'package:beandoche_osee_frontend/core/router/osee_app.dart';
 import 'package:beandoche_osee_frontend/core/providers/osee_store.dart';
 import 'package:beandoche_osee_frontend/features/auth/auth_api.dart';
 import 'package:beandoche_osee_frontend/features/auth/auth_controller.dart';
+import 'package:beandoche_osee_frontend/features/profile/profile_avatar.dart';
 
 import 'auth_test.dart' show sessionJson, profileJson, utf8Response;
 
 void main() {
+  testWidgets('t5 returning to the app restores the server cookie session', (
+    tester,
+  ) async {
+    var restores = 0;
+    final auth = AuthController(
+      api: AuthApi(
+        client: MockClient((request) async {
+          if (request.url.path.endsWith('/session')) {
+            restores++;
+            return utf8Response(jsonEncode(sessionJson()), 200);
+          }
+          return utf8Response(jsonEncode(profileJson()), 200);
+        }),
+      ),
+    );
+    final store = OseeStore();
+    await tester.runAsync(store.initialize);
+    await tester.pumpWidget(OseeApp(initialAuth: auth, initialStore: store));
+    await tester.pumpAndSettle();
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pumpAndSettle();
+    expect(restores, 1);
+    expect(auth.isAuthenticated, isTrue);
+    expect(find.byTooltip('마이페이지'), findsOneWidget);
+    expect(find.textContaining('회원 ID'), findsNothing);
+    await tester.pumpWidget(const SizedBox());
+    auth.dispose();
+    store.dispose();
+  });
+
+  testWidgets(
+    't6 default profile uses a basic person icon, not a model image',
+    (tester) async {
+      await tester.pumpWidget(const MaterialApp(home: ProfileAvatar()));
+      expect(find.byIcon(Icons.person_outline), findsOneWidget);
+      expect(find.byType(Image), findsNothing);
+    },
+  );
+
   test(
     't4 logout waits for an in-flight rotation before clearing the cookie',
     () async {

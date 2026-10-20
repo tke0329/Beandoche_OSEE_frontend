@@ -15,8 +15,12 @@
 직접 실행할 경우:
 
 ```powershell
-flutter run -d chrome --web-hostname localhost --web-port 5173 --dart-define-from-file=.env.json
+flutter run -d web-server --web-hostname localhost --web-port 5173 --dart-define-from-file=.env.json
 ```
+
+서버가 준비되면 평소 사용하는 브라우저에서 `http://localhost:5173`을 연다. 로그인 유지 확인은 같은 브라우저 프로필로 진행한다. `flutter run -d chrome`의 디버그 Chrome은 임시 프로필과 프로젝트 캐시를 사용하므로 일반 브라우저의 쿠키와 별개이며, 종료 방식에 따라 복원이 달라질 수 있다. 시크릿 모드나 종료 시 쿠키 삭제 설정에서는 로그인 유지가 보장되지 않는다.
+
+기본 진입 화면은 공개 홈이다. 헤더 프로필 영역의 로그인 버튼을 누르면 로그인 화면으로 이동한다. 개인 화면은 로그인이 필요하며 로그아웃하면 공개 홈으로 돌아간다. 앱 재접속 및 브라우저 복귀 시 HttpOnly 쿠키로 서버 세션을 확인한다.
 
 Google Cloud의 승인된 JavaScript 원본에는 `http://localhost`와 `http://localhost:5173`을 등록한다. 웹 공식 버튼에서 ID Token을 받는 흐름이므로 백엔드 Google callback URI는 사용하지 않는다.
 
