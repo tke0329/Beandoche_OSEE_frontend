@@ -1,9 +1,11 @@
 import 'dart:convert';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/testing.dart';
+import 'package:http/http.dart' as http;
 import 'package:beandoche_osee_frontend/core/router/osee_app.dart';
 import 'package:beandoche_osee_frontend/core/providers/osee_store.dart';
 import 'package:beandoche_osee_frontend/features/auth/auth_api.dart';
@@ -12,6 +14,34 @@ import 'package:beandoche_osee_frontend/features/auth/auth_controller.dart';
 import 'auth_test.dart' show sessionJson, profileJson, utf8Response;
 
 void main() {
+  test(
+    't4 logout waits for an in-flight rotation before clearing the cookie',
+    () async {
+      final pending = Completer<http.Response>();
+      var loggedOut = false;
+      final auth = AuthController(
+        api: AuthApi(
+          client: MockClient((r) async {
+            if (r.url.path.endsWith('/session')) return pending.future;
+            if (r.url.path.endsWith('/logout')) {
+              loggedOut = true;
+              return utf8Response('', 204);
+            }
+            return utf8Response(jsonEncode(profileJson()), 200);
+          }),
+        ),
+      );
+      final restoring = auth.restore();
+      final logout = auth.logout();
+      expect(loggedOut, isFalse);
+      pending.complete(utf8Response(jsonEncode(sessionJson()), 200));
+      await restoring;
+      await logout;
+      expect(loggedOut, isTrue);
+      expect(auth.session, isNull);
+      auth.dispose();
+    },
+  );
   test('t0 cookie response and profile JSON decode safely', () async {
     final api = AuthApi(
       client: MockClient(
