@@ -69,7 +69,7 @@ class LoginPage extends StatelessWidget {
                       const SizedBox(height: 20),
                       GoogleLoginPanel(auth: auth),
                       const SizedBox(height: 14),
-                      FilledButton.icon(
+                      FilledButton(
                         key: const ValueKey('kakao-login-button'),
                         onPressed: auth.busy ? null : auth.loginWithKakao,
                         style: FilledButton.styleFrom(
@@ -79,9 +79,18 @@ class LoginPage extends StatelessWidget {
                           fixedSize: const Size.fromHeight(40),
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           shape: const StadiumBorder(),
+                          padding: EdgeInsets.zero,
                         ),
-                        icon: const Icon(Icons.chat_bubble, size: 18),
-                        label: const Text('카카오로 계속하기'),
+                        child: const Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            Positioned(
+                              left: 12,
+                              child: Icon(Icons.chat_bubble, size: 18),
+                            ),
+                            Center(child: Text('카카오로 계속하기')),
+                          ],
+                        ),
                       ),
                       if (auth.busy) ...[
                         const SizedBox(height: 20),
