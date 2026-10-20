@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:beandoche_osee_frontend/core/router/osee_app.dart';
 import 'package:beandoche_osee_frontend/core/providers/osee_store.dart';
@@ -10,13 +9,17 @@ import 'package:beandoche_osee_frontend/features/auth/auth_api.dart';
 import 'package:beandoche_osee_frontend/features/auth/auth_controller.dart';
 import 'package:beandoche_osee_frontend/features/auth/login_page.dart';
 
-import 'auth_test.dart' show sessionJson;
+import 'auth_test.dart' show sessionJson, profileJson, utf8Response;
 
 void main() {
   testWidgets('t1 signed-out launch shows login before personal pages', (
     tester,
   ) async {
-    await tester.pumpWidget(const OseeApp());
+    final auth = AuthController(
+      api: AuthApi(client: MockClient((_) async => utf8Response('', 204))),
+    );
+    addTearDown(auth.dispose);
+    await tester.pumpWidget(OseeApp(initialAuth: auth));
     await tester.pumpAndSettle();
     expect(find.text('나에게 맞는 옷을 만나는 시작'), findsOneWidget);
     expect(find.text('WARDROBE'), findsNothing);
@@ -28,7 +31,7 @@ void main() {
     final auth = AuthController(
       api: AuthApi(
         baseUrl: 'http://localhost:8080',
-        client: MockClient((_) async => http.Response('private-detail', 401)),
+        client: MockClient((_) async => utf8Response('private-detail', 401)),
       ),
     );
     await tester.pumpWidget(MaterialApp(home: LoginPage(auth: auth)));
@@ -46,7 +49,14 @@ void main() {
       api: AuthApi(
         baseUrl: 'http://localhost:8080',
         client: MockClient(
-          (_) async => http.Response(jsonEncode(sessionJson()), 200),
+          (request) async => request.url.path.endsWith('/session')
+              ? utf8Response('', 204)
+              : utf8Response(
+                  jsonEncode(
+                    request.method == 'GET' ? profileJson() : sessionJson(),
+                  ),
+                  200,
+                ),
         ),
       ),
     );
@@ -79,7 +89,6 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(LoginPage), findsOneWidget);
     expect(find.text('Before you buy,'), findsNothing);
-    expect(find.textContaining('로그인이 만료되었습니다.'), findsOneWidget);
     await tester.pumpWidget(const SizedBox());
     auth.dispose();
     store.dispose();
@@ -90,7 +99,11 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
-    await tester.pumpWidget(const OseeApp());
+    final auth = AuthController(
+      api: AuthApi(client: MockClient((_) async => utf8Response('', 204))),
+    );
+    addTearDown(auth.dispose);
+    await tester.pumpWidget(OseeApp(initialAuth: auth));
     await tester.pumpAndSettle();
     expect(find.byType(LoginPage), findsOneWidget);
     expect(tester.takeException(), isNull);

@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
+
+import 'dart:convert';
+
+import 'package:http/testing.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:beandoche_osee_frontend/features/auth/auth_api.dart';
 import 'package:beandoche_osee_frontend/features/auth/auth_controller.dart';
 import 'package:beandoche_osee_frontend/features/auth/kakao_gateway.dart';
 import 'package:beandoche_osee_frontend/features/auth/login_page.dart';
 
-import 'auth_test.dart' show sessionJson;
+import 'auth_test.dart' show sessionJson, profileJson, utf8Response;
 
 class FakeKakaoGateway implements KakaoGateway {
   FakeKakaoGateway({this.failure});
@@ -62,7 +66,14 @@ void main() {
   testWidgets('t4 Kakao button authenticates through the shared controller', (
     tester,
   ) async {
-    final auth = AuthController(kakaoGateway: FakeKakaoGateway());
+    final auth = AuthController(
+      kakaoGateway: FakeKakaoGateway(),
+      api: AuthApi(
+        client: MockClient(
+          (_) async => utf8Response(jsonEncode(profileJson()), 200),
+        ),
+      ),
+    );
     await tester.pumpWidget(MaterialApp(home: LoginPage(auth: auth)));
     await tester.tap(find.text('카카오로 계속하기'));
     await tester.pumpAndSettle();

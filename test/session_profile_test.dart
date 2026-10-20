@@ -1,0 +1,111 @@
+import 'dart:convert';
+
+import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:http/testing.dart';
+import 'package:beandoche_osee_frontend/core/router/osee_app.dart';
+import 'package:beandoche_osee_frontend/core/providers/osee_store.dart';
+import 'package:beandoche_osee_frontend/features/auth/auth_api.dart';
+import 'package:beandoche_osee_frontend/features/auth/auth_controller.dart';
+
+import 'auth_test.dart' show sessionJson, profileJson, utf8Response;
+
+void main() {
+  test('t0 cookie response and profile JSON decode safely', () async {
+    final api = AuthApi(
+      client: MockClient(
+        (r) async => utf8Response(
+          jsonEncode(r.method == 'GET' ? profileJson() : sessionJson()),
+          200,
+        ),
+      ),
+    );
+    expect((await api.restore())!.userId, 42);
+    expect((await api.profile('test')).nickname, '테스트회원');
+    api.close();
+  });
+  test('t1 reload restores session through cookie API without storing refresh token in Dart', () async {
+    final auth = AuthController(
+      api: AuthApi(
+        client: MockClient(
+          (r) async => utf8Response(
+            jsonEncode(r.method == 'GET' ? profileJson() : sessionJson()),
+            200,
+          ),
+        ),
+      ),
+    );
+    await auth.restore();
+    expect(auth.isAuthenticated, isTrue);
+    expect(auth.profile!.nickname, '테스트회원');
+    auth.dispose();
+  });
+
+  testWidgets(
+    't2 incomplete profile requires nickname then shows prepared body step',
+    (tester) async {
+      var completed = false;
+      final auth = AuthController(
+        api: AuthApi(
+          client: MockClient((r) async {
+            if (r.method == 'PUT') completed = true;
+            return utf8Response(
+              jsonEncode(
+                r.url.path.endsWith('/google')
+                    ? sessionJson()
+                    : profileJson(completed: completed),
+              ),
+              200,
+            );
+          }),
+        ),
+      );
+      final store = OseeStore();
+      await tester.runAsync(store.initialize);
+      await tester.runAsync(() => auth.loginWithGoogle('test'));
+      await tester.pumpWidget(OseeApp(initialAuth: auth, initialStore: store));
+      await tester.pumpAndSettle();
+      expect(find.text('프로필 만들기'), findsOneWidget);
+      await tester.enterText(find.byType(TextFormField), '테스트회원');
+      await tester.ensureVisible(find.text('다음'));
+      await tester.tap(find.text('다음'));
+      await tester.pumpAndSettle();
+      expect(find.text('아직 준비 중입니다'), findsOneWidget);
+      expect(find.text('Before you buy,'), findsNothing);
+      await tester.tap(find.text('다음'));
+      await tester.pumpAndSettle();
+      expect(find.text('Before you buy,'), findsOneWidget);
+      final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      await mouse.addPointer(location: Offset.zero);
+      await mouse.moveTo(tester.getCenter(find.byTooltip('마이페이지')));
+      await tester.pumpAndSettle();
+      expect(find.text('테스트회원'), findsWidgets);
+      expect(find.text('마이페이지로 이동'), findsOneWidget);
+      await mouse.removePointer();
+      await tester.pumpWidget(const SizedBox());
+      auth.dispose();
+      store.dispose();
+    },
+  );
+
+  test('t3 logout ends session and clears private profile state', () async {
+    final auth = AuthController(
+      api: AuthApi(
+        client: MockClient(
+          (r) async => r.url.path.endsWith('/logout')
+              ? utf8Response('', 204)
+              : utf8Response(
+                  jsonEncode(r.method == 'GET' ? profileJson() : sessionJson()),
+                  200,
+                ),
+        ),
+      ),
+    );
+    await auth.restore();
+    await auth.logout();
+    expect(auth.session, isNull);
+    expect(auth.profile, isNull);
+    auth.dispose();
+  });
+}

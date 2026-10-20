@@ -3,12 +3,11 @@ import 'package:flutter/widgets.dart';
 
 import 'dart:convert';
 
-import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:beandoche_osee_frontend/features/auth/auth_api.dart';
 import 'package:beandoche_osee_frontend/features/auth/auth_controller.dart';
 
-import 'auth_test.dart' show sessionJson;
+import 'auth_test.dart' show sessionJson, profileJson, utf8Response;
 
 import 'package:beandoche_osee_frontend/core/router/osee_app.dart';
 import 'package:beandoche_osee_frontend/features/clothes/screens/clothes_page.dart';
@@ -45,7 +44,10 @@ void main() {
       api: AuthApi(
         baseUrl: 'http://localhost:8080',
         client: MockClient(
-          (_) async => http.Response(jsonEncode(sessionJson()), 200),
+          (request) async => utf8Response(
+            jsonEncode(request.method == 'GET' ? profileJson() : sessionJson()),
+            200,
+          ),
         ),
       ),
     );
