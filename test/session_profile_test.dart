@@ -15,6 +15,43 @@ import 'package:beandoche_osee_frontend/features/profile/profile_avatar.dart';
 import 'auth_test.dart' show sessionJson, profileJson, utf8Response;
 
 void main() {
+  testWidgets(
+    't7 pending profile hover timer is harmless after logout removes the portal',
+    (tester) async {
+      final auth = AuthController(
+        api: AuthApi(
+          client: MockClient(
+            (request) async => request.url.path.endsWith('/logout')
+                ? utf8Response('', 204)
+                : utf8Response(
+                    jsonEncode(
+                      request.method == 'GET' ? profileJson() : sessionJson(),
+                    ),
+                    200,
+                  ),
+          ),
+        ),
+      );
+      final store = OseeStore();
+      await tester.runAsync(store.initialize);
+      await auth.restore();
+      await tester.pumpWidget(OseeApp(initialAuth: auth, initialStore: store));
+      await tester.pumpAndSettle();
+      final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      await mouse.addPointer(location: Offset.zero);
+      await mouse.moveTo(tester.getCenter(find.byTooltip('마이페이지')));
+      await tester.pumpAndSettle();
+      await mouse.moveTo(Offset.zero);
+      await auth.logout();
+      await tester.pumpAndSettle();
+      expect(find.byTooltip('로그인'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await mouse.removePointer();
+      await tester.pumpWidget(const SizedBox());
+      auth.dispose();
+      store.dispose();
+    },
+  );
   testWidgets('t5 returning to the app restores the server cookie session', (
     tester,
   ) async {

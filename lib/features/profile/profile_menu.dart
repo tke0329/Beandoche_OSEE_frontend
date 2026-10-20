@@ -17,19 +17,20 @@ class _ProfileMenuState extends State<ProfileMenu> {
   final link = LayerLink();
   Timer? closing;
   void show() {
+    if (!mounted || !AuthScope.of(context).isAuthenticated) return;
     closing?.cancel();
     if (!controller.isShowing) controller.show();
   }
 
   void hide() {
     closing?.cancel();
-    controller.hide();
+    if (controller.isShowing) controller.hide();
   }
 
   void later() {
     closing?.cancel();
     closing = Timer(const Duration(milliseconds: 180), () {
-      if (mounted) controller.hide();
+      if (mounted && controller.isShowing) controller.hide();
     });
   }
 

@@ -10,6 +10,35 @@ class MyPage extends StatelessWidget {
   const MyPage({super.key, required this.onHome});
   final VoidCallback onHome;
 
+  Future<void> confirmWithdrawal(
+    BuildContext context,
+    AuthController auth,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('정말 탈퇴하시겠어요?'),
+        content: const Text(
+          '프로필과 사진이 삭제되고 모든 기기의 로그인 세션이 종료됩니다. 삭제한 정보는 복구할 수 없습니다.\n\n소셜 계정 자체는 삭제되지 않습니다. Google 연결은 탈퇴 후 계정 설정에서 직접 해제해야 합니다.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('취소'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xffb3261e),
+            ),
+            child: const Text('탈퇴하기'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) await auth.withdraw();
+  }
+
   @override
   Widget build(BuildContext context) {
     final auth = AuthScope.of(context);
@@ -117,6 +146,16 @@ class MyPage extends StatelessWidget {
                 onPressed: onHome,
                 icon: const Icon(Icons.arrow_back),
                 label: const Text('홈으로 돌아가기'),
+              ),
+              const SizedBox(height: 20),
+              TextButton(
+                onPressed: auth.busy
+                    ? null
+                    : () => confirmWithdrawal(context, auth),
+                style: TextButton.styleFrom(
+                  foregroundColor: const Color(0xffb3261e),
+                ),
+                child: const Text('회원탈퇴'),
               ),
             ],
           ),

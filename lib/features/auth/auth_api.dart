@@ -62,6 +62,15 @@ class AuthSession {
   }
 }
 
+class WithdrawalResult {
+  const WithdrawalResult({
+    required this.googleUnlinkRequired,
+    required this.kakaoUnlinkPending,
+  });
+  final bool googleUnlinkRequired;
+  final bool kakaoUnlinkPending;
+}
+
 class AuthApi {
   AuthApi({
     String? baseUrl,
@@ -184,14 +193,44 @@ class AuthApi {
     );
   }
 
-  Future<AuthSession?> restore() => _safe(() async {
-    final body = _read(await _client.post(_uri('/api/auth/web/session')));
-    return body == null ? null : AuthSession.fromJson(body);
-  });
+  Future<AuthSession?> restore() => transport.sessionOperation(
+    'osee-session:$_baseUrl',
+    () => _safe(() async {
+      final body = _read(await _client.post(_uri('/api/auth/web/session')));
+      return body == null ? null : AuthSession.fromJson(body);
+    }),
+  );
 
-  Future<void> logout() => _safe(() async {
-    _read(await _client.post(_uri('/api/auth/web/logout')));
-  });
+  Future<void> logout() => transport.sessionOperation(
+    'osee-session:$_baseUrl',
+    () => _safe(() async {
+      _read(await _client.post(_uri('/api/auth/web/logout')));
+    }),
+  );
+
+  Future<WithdrawalResult> withdraw(String accessToken) =>
+      transport.sessionOperation(
+        'osee-session:$_baseUrl',
+        () => _safe(() async {
+          final body = _read(
+            await _client.delete(
+              _uri('/api/users/me'),
+              headers: {'Authorization': 'Bearer $accessToken'},
+            ),
+          );
+          if (body case {
+            'withdrawn': true,
+            'googleUnlinkRequired': bool google,
+            'kakaoUnlinkPending': bool kakao,
+          }) {
+            return WithdrawalResult(
+              googleUnlinkRequired: google,
+              kakaoUnlinkPending: kakao,
+            );
+          }
+          throw const FormatException('Invalid withdrawal response');
+        }),
+      );
 
   Future<ProfileData> profile(String accessToken) => _safe(
     () async => ProfileData.fromJson(

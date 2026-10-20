@@ -15,6 +15,7 @@ import '../../features/auth/login_page.dart';
 import '../../features/profile/screens/mypage.dart';
 import '../../features/profile/screens/profile_form_page.dart';
 import '../../features/profile/screens/body_setup_page.dart';
+import '../../features/profile/screens/withdrawal_complete_page.dart';
 
 import 'dart:async';
 
@@ -76,6 +77,9 @@ class _OseeAppState extends State<OseeApp> {
         listenable: auth,
         builder: (context, _) {
           if (!auth.isAuthenticated) {
+            if (auth.withdrawalResult != null) {
+              return WithdrawalCompletePage(auth: auth);
+            }
             if (loginRequested) {
               return LoginPage(
                 auth: auth,

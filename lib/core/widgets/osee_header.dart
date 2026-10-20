@@ -3,6 +3,7 @@ import 'package:beandoche_osee_frontend/core/theme/osee_theme.dart';
 import 'package:flutter/material.dart';
 
 import '../../features/profile/profile_menu.dart';
+import '../../features/auth/auth_controller.dart';
 
 class OseeHeader extends StatelessWidget {
   const OseeHeader({
@@ -72,7 +73,10 @@ class OseeHeader extends StatelessWidget {
               ],
             ],
             const Spacer(),
-            ProfileMenu(onProfile: () => onNavigate(5)),
+            ProfileMenu(
+              key: ValueKey(AuthScope.of(context).isAuthenticated),
+              onProfile: () => onNavigate(5),
+            ),
           ],
         ),
       ),

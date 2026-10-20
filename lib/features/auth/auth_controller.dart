@@ -6,6 +6,9 @@ import 'package:flutter/widgets.dart';
 import '../profile/profile_data.dart';
 import 'auth_api.dart';
 import 'kakao_gateway.dart';
+import 'credential_client_stub.dart'
+    if (dart.library.js_interop) 'credential_client_web.dart'
+    as session_platform;
 import 'kakao_gateway_stub.dart'
     if (dart.library.js_interop) 'kakao_gateway_web.dart'
     as platform;
@@ -23,7 +26,14 @@ class AuthScope extends InheritedNotifier<AuthController> {
 class AuthController extends ChangeNotifier {
   AuthController({AuthApi? api, KakaoGateway? kakaoGateway})
     : _api = api ?? AuthApi(),
-      _kakao = kakaoGateway ?? platform.createKakaoGateway();
+      _kakao = kakaoGateway ?? platform.createKakaoGateway() {
+    _cancelSessionWatch = session_platform.watchSessionEnd(() {
+      if (!_disposed) {
+        _clearSession();
+        notifyListeners();
+      }
+    });
+  }
   final AuthApi _api;
   final KakaoGateway _kakao;
   AuthSession? _session;
@@ -40,6 +50,9 @@ class AuthController extends ChangeNotifier {
   bool _disposed = false;
   Timer? _expiry;
   Future<void>? _restoration;
+  late final void Function() _cancelSessionWatch;
+  int _sessionGeneration = 0;
+  WithdrawalResult? withdrawalResult;
 
   Future<void> loginWithGoogle(String idToken) =>
       _login(() => _api.loginWithGoogle(idToken));
@@ -47,12 +60,13 @@ class AuthController extends ChangeNotifier {
 
   Future<void> _login(Future<AuthSession> Function() authenticate) async {
     if (busy || _disposed || isAuthenticated || restoring) return;
+    final generation = _sessionGeneration;
     busy = true;
     error = null;
     notifyListeners();
     try {
       final result = await authenticate();
-      if (_disposed) return;
+      if (_disposed || generation != _sessionGeneration) return;
       _session = result;
       profile = null;
       _schedule();
@@ -75,12 +89,13 @@ class AuthController extends ChangeNotifier {
   }
 
   Future<void> _restore() async {
+    final generation = _sessionGeneration;
     restoring = true;
     error = null;
     notifyListeners();
     try {
       final restored = await _api.restore();
-      if (_disposed) return;
+      if (_disposed || generation != _sessionGeneration) return;
       _session = restored;
       if (restored == null) {
         profile = null;
@@ -234,10 +249,8 @@ class AuthController extends ChangeNotifier {
       if (_disposed) return;
       await _api.logout();
       if (_disposed) return;
-      _session = null;
-      profile = null;
-      showBodyStep = false;
-      _expiry?.cancel();
+      _clearSession();
+      session_platform.publishSessionEnd();
     } on AuthFailure catch (failure) {
       if (!_disposed) error = failure.message;
     } catch (_) {
@@ -248,6 +261,48 @@ class AuthController extends ChangeNotifier {
         notifyListeners();
       }
     }
+  }
+
+  void _clearSession() {
+    _sessionGeneration++;
+    _session = null;
+    profile = null;
+    nicknameError = null;
+    showBodyStep = false;
+    _expiry?.cancel();
+  }
+
+  Future<bool> withdraw() async {
+    if (busy || !isAuthenticated) return false;
+    busy = true;
+    error = null;
+    notifyListeners();
+    try {
+      if (_restoration != null) await _restoration;
+      if (_disposed || _session == null) return false;
+      final result = await _api.withdraw(_session!.accessToken);
+      if (_disposed) return false;
+      _clearSession();
+      withdrawalResult = result;
+      session_platform.publishSessionEnd();
+      return true;
+    } on AuthFailure catch (failure) {
+      if (!_disposed) error = failure.message;
+      return false;
+    } catch (_) {
+      if (!_disposed) error = '탈퇴하지 못했습니다. 연결 상태를 확인한 뒤 다시 시도해 주세요.';
+      return false;
+    } finally {
+      if (!_disposed) {
+        busy = false;
+        notifyListeners();
+      }
+    }
+  }
+
+  void finishWithdrawal() {
+    withdrawalResult = null;
+    notifyListeners();
   }
 
   void finishBodyStep() {
@@ -265,6 +320,7 @@ class AuthController extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    _cancelSessionWatch();
     _expiry?.cancel();
     _kakao.cancel();
     _session = null;

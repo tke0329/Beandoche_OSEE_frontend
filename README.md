@@ -62,6 +62,14 @@ A new Flutter project.
 
 공식 REST 흐름: [카카오 로그인 REST API](https://developers.kakao.com/docs/ko/kakaologin/rest-api)
 
+## 회원탈퇴 및 여러 탭의 세션
+
+마이페이지의 회원탈퇴 버튼은 복구 불가 안내와 확인창을 제공한다. 취소하면 API를 호출하지 않는다. 성공 시 개인 화면/세션을 정리하고 탈퇴 완료 화면에서 Google 외부 연결 해제와 Kakao 후속 처리 안내를 제공한다. Kakao 자동 해제에는 BE 전용 `KAKAO_ADMIN_KEY`가 필요하며 프론트 설정에 넣지 않는다. 자세한 후속 작업 상태와 새 Flyway는 BE README를 확인한다.
+
+동일 원본 여러 탭의 쿠키 회전/로그아웃/탈퇴 요청은 Web Locks로 직렬화한다. 지원되지 않는 브라우저는 일반 요청으로 동작하며, 서버의 오래된 응답도 새 쿠키를 삭제하지 않는다. BroadcastChannel로 다른 탭에도 종료 상태를 전달한다. 토큰/신체정보를 채널이나 localStorage에 보내지 않는다.
+
+Google SDK의 `The given origin is not allowed for the given client ID`는 앱 예외를 숨겨 해결하지 않는다. 현재 실행하는 Web Client ID의 승인된 JavaScript 원본에 `http://localhost`와 `http://localhost:5173`이 모두 있는지 확인한다. BE/FE ID를 바꿨다면 두 서버를 재시작한다. [Google 공식 설정](https://developers.google.com/identity/gsi/web/guides/get-google-api-clientid).
+
 ## Getting Started
 
 This project is a starting point for a Flutter application.
