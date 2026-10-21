@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 
 import 'auth_controller.dart';
 import 'google_sdk.dart';
@@ -19,7 +18,7 @@ class GoogleLoginPanel extends StatefulWidget {
 }
 
 class _GoogleLoginPanelState extends State<GoogleLoginPanel> {
-  StreamSubscription<GoogleSignInAuthenticationEvent>? _subscription;
+  StreamSubscription<String?>? _subscription;
   Widget? _button;
   double? _buttonWidth;
   String? _setupError;
@@ -55,26 +54,13 @@ class _GoogleLoginPanelState extends State<GoogleLoginPanel> {
     try {
       await initializeGoogleSdk(clientId).timeout(const Duration(seconds: 15));
       if (!mounted) return;
-      _subscription ??= GoogleSignIn.instance.authenticationEvents.listen(
-        (event) {
-          if (event is GoogleSignInAuthenticationEventSignIn) {
-            final token = event.user.authentication.idToken;
-            if (token == null || token.isEmpty) {
-              widget.auth.showProviderError('Google 인증을 다시 진행해 주세요.');
-            } else {
-              unawaited(widget.auth.loginWithGoogle(token));
-            }
-          }
-        },
-        onError: (Object error) {
-          widget.auth.showProviderError(
-            error is GoogleSignInException &&
-                    error.code == GoogleSignInExceptionCode.canceled
-                ? '로그인을 취소했습니다. 다시 시도할 수 있습니다.'
-                : 'Google 로그인에 실패했습니다. 다시 시도해 주세요.',
-          );
-        },
-      );
+      _subscription ??= googleCredentialEvents.listen((token) {
+        if (token == null) {
+          widget.auth.showProviderError('Google 인증을 다시 진행해 주세요.');
+        } else {
+          unawaited(widget.auth.loginWithGoogle(token));
+        }
+      });
       setState(() {
         _loading = false;
       });
@@ -114,7 +100,16 @@ class _GoogleLoginPanelState extends State<GoogleLoginPanel> {
         final width = constraints.maxWidth.clamp(1.0, 400.0);
         if (_button == null || _buttonWidth != width) {
           _buttonWidth = width;
-          _button = platform.buildGoogleButton(width);
+          _button = platform.buildGoogleButton(
+            width,
+            onError: () {
+              if (!mounted) return;
+              setState(() {
+                _button = null;
+                _setupError = 'Google 로그인 버튼을 불러오지 못했습니다. 다시 시도해 주세요.';
+              });
+            },
+          );
         }
         return SizedBox(
           width: width,

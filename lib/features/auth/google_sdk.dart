@@ -1,10 +1,2 @@
-import 'package:google_sign_in/google_sign_in.dart';
-
-Future<void>? _ready;
-Future<void> initializeGoogleSdk(String clientId) => _ready ??= GoogleSignIn
-    .instance
-    .initialize(clientId: clientId)
-    .catchError((Object error) {
-      _ready = null;
-      throw error;
-    });
+export 'google_sdk_stub.dart'
+    if (dart.library.js_interop) 'google_sdk_web.dart';

@@ -3,6 +3,7 @@
 ## OSEE 웹 Google 로그인 실행
 
 1. `flutter pub get`을 실행한다.
+   Windows에서 심볼릭 링크 권한 안내가 나오면 Windows 설정의 개발자 모드를 활성화한 뒤 다시 실행한다. 데스크톱 플러그인 링크 권한과 웹 로그인 오류는 별개다.
 2. `config/development.example.json`을 프로젝트 루트의 `.env.json`으로 복사한다.
 3. `GOOGLE_OAUTH_CLIENT_ID`에 백엔드와 동일한 **웹 OAuth Client ID**를 설정한다. Client Secret은 넣지 않는다.
 4. 백엔드 저장소에서 PostgreSQL과 Spring을 실행한다. 기본 API 주소는 `http://localhost:8080`이다.
@@ -48,7 +49,9 @@ flutter test
 flutter build web --dart-define-from-file=.env.json
 ```
 
-공식 연동 방식: [google_sign_in_web](https://pub.dev/packages/google_sign_in_web)
+웹 Google 로그인은 공식 [Google Identity Services JavaScript API](https://developers.google.com/identity/gsi/web/reference/js-reference)를 Dart JS interop으로 호출한다. SDK를 한 번 초기화하고 버튼과 탈퇴 연결 해제에서 공유한다. `use_fedcm_for_button=true`로 지원 Chrome에서 브라우저 중재 방식의 로그인 버튼을 사용하며 `auto_select`와 `button_auto_select`는 꺼 두어 계정 선택 없이 자동 로그인하지 않는다. 브라우저 미지원·사용자 설정에 따라 기존 팝업으로 대체될 수 있으므로 외부 SDK 경고 제거를 모든 환경에서 보장하지 않는다. ID Token 검증과 서비스 세션 발급은 기존 BE API에서 수행한다.
+
+최초 가입 및 탈퇴 후 재가입의 프로필 입력 화면은 가입 진행 단계로 표시한다. 이 단계에서는 완료된 계정 메뉴나 로그아웃 문구를 노출하지 않고 `나가기`로 현재 인증 세션을 종료하고 공개 홈으로 돌아갈 수 있다. 소셜 인증 세션은 본인 프로필 저장에 필요하며 프로필 입력 완료를 대신하지 않는다.
 
 A new Flutter project.
 
