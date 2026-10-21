@@ -13,6 +13,11 @@ import 'package:flutter/material.dart';
 import '../../features/auth/auth_controller.dart';
 import '../../features/auth/login_page.dart';
 import '../../features/profile/screens/mypage.dart';
+import '../../features/profile/screens/profile_form_page.dart';
+import '../../features/profile/screens/body_setup_page.dart';
+import '../../features/profile/screens/withdrawal_complete_page.dart';
+
+import 'dart:async';
 
 class OseeApp extends StatefulWidget {
   const OseeApp({super.key, this.initialStore, this.initialAuth});
@@ -23,10 +28,39 @@ class OseeApp extends StatefulWidget {
 }
 
 class _OseeAppState extends State<OseeApp> {
+  final navigator = GlobalKey<NavigatorState>();
+  bool previouslyAuthenticated = false;
+  bool loginRequested = false;
+  late final AppLifecycleListener lifecycle;
   late final AuthController auth = widget.initialAuth ?? AuthController();
 
   @override
+  void initState() {
+    super.initState();
+    previouslyAuthenticated = auth.isAuthenticated;
+    auth.addListener(onAuthChanged);
+    lifecycle = AppLifecycleListener(
+      onResume: () {
+        if (!auth.busy) unawaited(auth.restore());
+      },
+    );
+    if (widget.initialAuth == null) unawaited(auth.restore());
+  }
+
+  void onAuthChanged() {
+    if (auth.isAuthenticated) loginRequested = false;
+    if (previouslyAuthenticated && !auth.isAuthenticated) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) navigator.currentState?.popUntil((route) => route.isFirst);
+      });
+    }
+    previouslyAuthenticated = auth.isAuthenticated;
+  }
+
+  @override
   void dispose() {
+    auth.removeListener(onAuthChanged);
+    lifecycle.dispose();
     if (widget.initialAuth == null) auth.dispose();
     super.dispose();
   }
@@ -35,22 +69,72 @@ class _OseeAppState extends State<OseeApp> {
   Widget build(BuildContext context) => AuthScope(
     controller: auth,
     child: MaterialApp(
+      navigatorKey: navigator,
       title: 'OSEE',
       debugShowCheckedModeBanner: false,
       theme: oseeTheme,
       home: ListenableBuilder(
         listenable: auth,
-        builder: (context, _) => auth.isAuthenticated
-            ? _OseeWorkspace(initialStore: widget.initialStore)
-            : LoginPage(auth: auth),
+        builder: (context, _) {
+          if (!auth.isAuthenticated) {
+            if (auth.withdrawalResult != null) {
+              return WithdrawalCompletePage(auth: auth);
+            }
+            if (loginRequested) {
+              return LoginPage(
+                auth: auth,
+                onHome: () => setState(() => loginRequested = false),
+              );
+            }
+            return _OseeWorkspace(
+              initialStore: widget.initialStore,
+              onLogin: () => setState(() => loginRequested = true),
+            );
+          }
+          if (auth.profile == null) {
+            return Scaffold(
+              body: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (auth.busy)
+                      const CircularProgressIndicator()
+                    else ...[
+                      Text(auth.error ?? '프로필을 확인하지 못했습니다.'),
+                      TextButton(
+                        onPressed: auth.reloadProfile,
+                        child: const Text('다시 시도'),
+                      ),
+                      TextButton(
+                        onPressed: auth.logout,
+                        child: const Text('로그아웃'),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            );
+          }
+          if (!auth.profile!.completed) {
+            return ProfileFormPage(auth: auth, initial: true);
+          }
+          if (auth.showBodyStep) {
+            return BodySetupPage(onNext: auth.finishBodyStep);
+          }
+          return _OseeWorkspace(
+            initialStore: widget.initialStore,
+            onLogin: () => setState(() => loginRequested = true),
+          );
+        },
       ),
     ),
   );
 }
 
 class _OseeWorkspace extends StatefulWidget {
-  const _OseeWorkspace({this.initialStore});
+  const _OseeWorkspace({this.initialStore, required this.onLogin});
   final OseeStore? initialStore;
+  final VoidCallback onLogin;
 
   @override
   State<_OseeWorkspace> createState() => _OseeWorkspaceState();
@@ -66,10 +150,17 @@ class _OseeWorkspaceState extends State<_OseeWorkspace> {
   String? subcategory = 'Pants';
   bool clothesMenuOpen = false;
 
-  void open(int index) => setState(() {
-    page = index;
-    clothesMenuOpen = false;
-  });
+  void open(int index) {
+    if (index >= 2 && !AuthScope.of(context).isAuthenticated) {
+      if (!AuthScope.of(context).restoring) widget.onLogin();
+      return;
+    }
+    setState(() {
+      page = index;
+      clothesMenuOpen = false;
+    });
+  }
+
   void filter(String value, [String? sub]) => setState(() {
     category = value;
     subcategory = sub;
@@ -94,11 +185,13 @@ class _OseeWorkspaceState extends State<_OseeWorkspace> {
         builder: (context, _) => LayoutBuilder(
           builder: (context, size) {
             final wide = size.maxWidth >= 1050;
+            final visiblePage =
+                !AuthScope.of(context).isAuthenticated && page >= 2 ? 0 : page;
             return Scaffold(
               appBar: PreferredSize(
                 preferredSize: const Size.fromHeight(64),
                 child: OseeHeader(
-                  activePage: page,
+                  activePage: visiblePage,
                   wide: wide,
                   onNavigate: open,
                   onClothesHover: () => setState(() => clothesMenuOpen = true),
@@ -108,22 +201,19 @@ class _OseeWorkspaceState extends State<_OseeWorkspace> {
               body: Stack(
                 children: [
                   Positioned.fill(
-                    child: [
-                      HomePage(open: open),
-                      ClothesPage(
+                    child: switch (visiblePage) {
+                      1 => ClothesPage(
                         store: store,
                         category: category,
                         subcategory: subcategory,
                         filter: filter,
                       ),
-                      FittingPage(store: store, open: open),
-                      WardrobePage(store: store, open: open),
-                      OutfitsPage(store: store, open: open),
-                      MyPage(
-                        userId: AuthScope.of(context).session!.userId,
-                        onHome: () => open(0),
-                      ),
-                    ][page],
+                      2 => FittingPage(store: store, open: open),
+                      3 => WardrobePage(store: store, open: open),
+                      4 => OutfitsPage(store: store, open: open),
+                      5 => MyPage(onHome: () => open(0)),
+                      _ => HomePage(open: open),
+                    },
                   ),
                   if (wide && clothesMenuOpen)
                     Positioned(
@@ -137,10 +227,10 @@ class _OseeWorkspaceState extends State<_OseeWorkspace> {
                     ),
                 ],
               ),
-              bottomNavigationBar: wide || page == 5
+              bottomNavigationBar: wide || visiblePage == 5
                   ? null
                   : NavigationBar(
-                      selectedIndex: page,
+                      selectedIndex: visiblePage,
                       onDestinationSelected: open,
                       height: 70,
                       destinations: const [

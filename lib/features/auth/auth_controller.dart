@@ -1,8 +1,20 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter/widgets.dart';
 
+import '../profile/profile_data.dart';
 import 'auth_api.dart';
+import 'kakao_gateway.dart';
+import 'google_revoke_stub.dart'
+    if (dart.library.js_interop) 'google_revoke_web.dart'
+    as google_platform;
+import 'credential_client_stub.dart'
+    if (dart.library.js_interop) 'credential_client_web.dart'
+    as session_platform;
+import 'kakao_gateway_stub.dart'
+    if (dart.library.js_interop) 'kakao_gateway_web.dart'
+    as platform;
 
 class AuthScope extends InheritedNotifier<AuthController> {
   const AuthScope({
@@ -10,42 +22,63 @@ class AuthScope extends InheritedNotifier<AuthController> {
     required AuthController controller,
     required super.child,
   }) : super(notifier: controller);
-
   static AuthController of(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<AuthScope>()!.notifier!;
 }
 
 class AuthController extends ChangeNotifier {
-  AuthController({AuthApi? api}) : _api = api ?? AuthApi();
+  AuthController({
+    AuthApi? api,
+    KakaoGateway? kakaoGateway,
+    Future<bool> Function(List<String>)? googleRevoker,
+  }) : _api = api ?? AuthApi(),
+       _kakao = kakaoGateway ?? platform.createKakaoGateway(),
+       _googleRevoker = googleRevoker ?? google_platform.revokeGoogleSubjects {
+    _cancelSessionWatch = session_platform.watchSessionEnd(() {
+      if (!_disposed) {
+        _clearSession();
+        notifyListeners();
+      }
+    });
+  }
   final AuthApi _api;
+  final KakaoGateway _kakao;
+  final Future<bool> Function(List<String>) _googleRevoker;
   AuthSession? _session;
   AuthSession? get session => _session;
+  ProfileData? profile;
   bool get isAuthenticated =>
       _session != null &&
       _session!.accessTokenExpiresAt.isAfter(DateTime.now());
   bool busy = false;
+  bool restoring = false;
+  bool showBodyStep = false;
   String? error;
+  String? nicknameError;
   bool _disposed = false;
   Timer? _expiry;
+  Future<void>? _restoration;
+  late final void Function() _cancelSessionWatch;
+  int _sessionGeneration = 0;
+  WithdrawalResult? withdrawalResult;
 
-  Future<void> loginWithGoogle(String idToken) async {
-    if (busy || _disposed || isAuthenticated) return;
+  Future<void> loginWithGoogle(String idToken) =>
+      _login(() => _api.loginWithGoogle(idToken));
+  Future<void> loginWithKakao() => _login(_kakao.login);
+
+  Future<void> _login(Future<AuthSession> Function() authenticate) async {
+    if (busy || _disposed || isAuthenticated || restoring) return;
+    final generation = _sessionGeneration;
     busy = true;
     error = null;
     notifyListeners();
     try {
-      final result = await _api.loginWithGoogle(idToken);
-      if (_disposed) return;
+      final result = await authenticate();
+      if (_disposed || generation != _sessionGeneration) return;
       _session = result;
-      _expiry?.cancel();
-      _expiry = Timer(
-        result.accessTokenExpiresAt.difference(DateTime.now()),
-        () {
-          _session = null;
-          error = '로그인이 만료되었습니다. 다시 로그인해 주세요.';
-          notifyListeners();
-        },
-      );
+      profile = null;
+      _schedule();
+      await _loadProfile();
     } on AuthFailure catch (failure) {
       if (!_disposed) error = failure.message;
     } catch (_) {
@@ -58,16 +91,277 @@ class AuthController extends ChangeNotifier {
     }
   }
 
-  void showProviderError(String message) {
-    if (_disposed || busy || isAuthenticated) return;
-    error = message;
+  Future<void> restore() {
+    if (_disposed) return Future.value();
+    return _restoration ??= _restore().whenComplete(() => _restoration = null);
+  }
+
+  Future<void> _restore() async {
+    final generation = _sessionGeneration;
+    restoring = true;
+    error = null;
     notifyListeners();
+    try {
+      final restored = await _api.restore();
+      if (_disposed || generation != _sessionGeneration) return;
+      _session = restored;
+      if (restored == null) {
+        profile = null;
+        showBodyStep = false;
+        _expiry?.cancel();
+      } else {
+        _schedule();
+        if (profile == null || profile!.userId != restored.userId) {
+          await _loadProfile();
+        }
+      }
+    } on AuthFailure catch (failure) {
+      if (!_disposed) {
+        error = failure.message;
+        if (!isAuthenticated) {
+          _session = null;
+          profile = null;
+        } else {
+          _expiry?.cancel();
+          _expiry = Timer(
+            const Duration(seconds: 15),
+            () => unawaited(restore()),
+          );
+        }
+      }
+    } catch (_) {
+      if (!_disposed) {
+        _session = null;
+        profile = null;
+        error = '로그인 상태를 확인하지 못했습니다. 다시 시도해 주세요.';
+      }
+    } finally {
+      if (!_disposed) {
+        restoring = false;
+        notifyListeners();
+      }
+    }
+  }
+
+  void _schedule() {
+    _expiry?.cancel();
+    final delay =
+        _session!.accessTokenExpiresAt.difference(DateTime.now()) -
+        const Duration(seconds: 30);
+    _expiry = Timer(
+      delay.isNegative ? const Duration(seconds: 1) : delay,
+      () => unawaited(restore()),
+    );
+  }
+
+  Future<void> _loadProfile() async {
+    final userId = _session?.userId;
+    if (_session == null) return;
+    try {
+      final value = await _api.profile(_session!.accessToken);
+      if (!_disposed && _session?.userId == userId) profile = value;
+    } on AuthFailure catch (failure) {
+      if (!_disposed) error = failure.message;
+    }
+  }
+
+  Future<void> reloadProfile() async {
+    if (busy || !isAuthenticated) return;
+    busy = true;
+    error = null;
+    notifyListeners();
+    try {
+      await _loadProfile();
+    } catch (_) {
+      if (!_disposed) error = '프로필을 불러오지 못했습니다. 다시 시도해 주세요.';
+    } finally {
+      if (!_disposed) {
+        busy = false;
+        notifyListeners();
+      }
+    }
+  }
+
+  Future<bool> saveProfile(
+    String nickname, {
+    Uint8List? image,
+    String? imageName,
+    bool removeImage = false,
+  }) async {
+    if (busy || !isAuthenticated) return false;
+    final userId = _session!.userId;
+    final initial = !(profile?.completed ?? false);
+    busy = true;
+    error = null;
+    nicknameError = null;
+    notifyListeners();
+    try {
+      final saved = await _api.saveProfile(
+        _session!.accessToken,
+        nickname,
+        image: image,
+        imageName: imageName,
+        removeImage: removeImage,
+      );
+      if (_disposed || _session?.userId != userId) return false;
+      profile = saved;
+      showBodyStep = initial;
+      return true;
+    } on AuthFailure catch (failure) {
+      if (!_disposed) {
+        if (failure.code == 'NICKNAME_ALREADY_EXISTS' ||
+            failure.code == 'NICKNAME_NOT_ALLOWED' ||
+            failure.code == 'INVALID_NICKNAME') {
+          nicknameError = failure.message;
+        } else {
+          error = failure.message;
+        }
+      }
+      return false;
+    } catch (_) {
+      if (!_disposed) error = '프로필을 저장하지 못했습니다. 다시 시도해 주세요.';
+      return false;
+    } finally {
+      if (!_disposed) {
+        busy = false;
+        notifyListeners();
+      }
+    }
+  }
+
+  void clearNicknameError() {
+    if (!_disposed && nicknameError != null) {
+      nicknameError = null;
+      notifyListeners();
+    }
+  }
+
+  Future<String?> checkNickname(String nickname) async {
+    if (!isAuthenticated) return '로그인 상태를 다시 확인해 주세요.';
+    try {
+      return await _api.checkNickname(_session!.accessToken, nickname);
+    } on AuthFailure catch (failure) {
+      return failure.message;
+    } catch (_) {
+      return '닉네임을 확인하지 못했습니다. 다시 시도해 주세요.';
+    }
+  }
+
+  Future<void> logout() async {
+    if (busy) return;
+    busy = true;
+    error = null;
+    notifyListeners();
+    try {
+      if (_restoration != null) await _restoration;
+      if (_disposed) return;
+      await _api.logout();
+      if (_disposed) return;
+      _clearSession();
+      session_platform.publishSessionEnd();
+    } on AuthFailure catch (failure) {
+      if (!_disposed) error = failure.message;
+    } catch (_) {
+      if (!_disposed) error = '로그아웃하지 못했습니다. 연결 상태를 확인해 주세요.';
+    } finally {
+      if (!_disposed) {
+        busy = false;
+        notifyListeners();
+      }
+    }
+  }
+
+  void _clearSession() {
+    _sessionGeneration++;
+    _session = null;
+    profile = null;
+    nicknameError = null;
+    showBodyStep = false;
+    _expiry?.cancel();
+  }
+
+  Future<bool> withdraw() async {
+    if (busy || !isAuthenticated) return false;
+    busy = true;
+    error = null;
+    notifyListeners();
+    try {
+      if (_restoration != null) await _restoration;
+      if (_disposed || _session == null) return false;
+      final oldAccess = _session!.accessToken;
+      final result = await _api.withdraw(oldAccess);
+      if (_disposed) return false;
+      _clearSession();
+      withdrawalResult = result.googleStatus(
+        pending: result.googleSubjects.isNotEmpty,
+      );
+      session_platform.publishSessionEnd();
+      if (result.googleSubjects.isNotEmpty) {
+        unawaited(_finishGoogleUnlink(result, oldAccess, _sessionGeneration));
+      }
+      return true;
+    } on AuthFailure catch (failure) {
+      if (!_disposed) error = failure.message;
+      return false;
+    } catch (_) {
+      if (!_disposed) error = '탈퇴하지 못했습니다. 연결 상태를 확인한 뒤 다시 시도해 주세요.';
+      return false;
+    } finally {
+      if (!_disposed) {
+        busy = false;
+        notifyListeners();
+      }
+    }
+  }
+
+  Future<void> _finishGoogleUnlink(
+    WithdrawalResult result,
+    String oldAccess,
+    int generation,
+  ) async {
+    var succeeded = false;
+    String? warning;
+    try {
+      succeeded = await _googleRevoker(result.googleSubjects);
+      if (succeeded) await _api.confirmGoogleUnlink(oldAccess);
+    } catch (_) {
+      warning = succeeded ? 'Google 연결은 해제했지만 완료 기록을 저장하지 못했습니다.' : null;
+    }
+    if (!_disposed &&
+        withdrawalResult != null &&
+        generation == _sessionGeneration) {
+      withdrawalResult = result.googleStatus(
+        pending: false,
+        succeeded: succeeded,
+        warning: warning,
+      );
+      notifyListeners();
+    }
+  }
+
+  void finishWithdrawal() {
+    withdrawalResult = null;
+    notifyListeners();
+  }
+
+  void finishBodyStep() {
+    showBodyStep = false;
+    notifyListeners();
+  }
+
+  void showProviderError(String message) {
+    if (!_disposed && !busy && !isAuthenticated) {
+      error = message;
+      notifyListeners();
+    }
   }
 
   @override
   void dispose() {
     _disposed = true;
+    _cancelSessionWatch();
     _expiry?.cancel();
+    _kakao.cancel();
     _session = null;
     _api.close();
     super.dispose();

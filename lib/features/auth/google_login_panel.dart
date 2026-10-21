@@ -2,22 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 
 import 'auth_controller.dart';
+import 'google_sdk.dart';
 import 'google_button_stub.dart'
     if (dart.library.js_interop) 'google_button_web.dart'
     as platform;
-
-Future<void>? _sdkReady;
-
-Future<void> _initializeSdk(String clientId) => _sdkReady ??= GoogleSignIn
-    .instance
-    .initialize(clientId: clientId)
-    .catchError((Object error) {
-      _sdkReady = null;
-      throw error;
-    });
 
 class GoogleLoginPanel extends StatefulWidget {
   const GoogleLoginPanel({super.key, required this.auth});
@@ -28,8 +18,9 @@ class GoogleLoginPanel extends StatefulWidget {
 }
 
 class _GoogleLoginPanelState extends State<GoogleLoginPanel> {
-  StreamSubscription<GoogleSignInAuthenticationEvent>? _subscription;
+  StreamSubscription<String?>? _subscription;
   Widget? _button;
+  double? _buttonWidth;
   String? _setupError;
   bool _loading = true;
 
@@ -61,31 +52,16 @@ class _GoogleLoginPanelState extends State<GoogleLoginPanel> {
       _setupError = null;
     });
     try {
-      await _initializeSdk(clientId).timeout(const Duration(seconds: 15));
+      await initializeGoogleSdk(clientId).timeout(const Duration(seconds: 15));
       if (!mounted) return;
-      _subscription ??= GoogleSignIn.instance.authenticationEvents.listen(
-        (event) {
-          if (event is GoogleSignInAuthenticationEventSignIn) {
-            final token = event.user.authentication.idToken;
-            if (token == null || token.isEmpty) {
-              widget.auth.showProviderError('Google 인증을 다시 진행해 주세요.');
-            } else {
-              unawaited(widget.auth.loginWithGoogle(token));
-            }
-          }
-        },
-        onError: (Object error) {
-          widget.auth.showProviderError(
-            error is GoogleSignInException &&
-                    error.code == GoogleSignInExceptionCode.canceled
-                ? '로그인을 취소했습니다. 다시 시도할 수 있습니다.'
-                : 'Google 로그인에 실패했습니다. 다시 시도해 주세요.',
-          );
-        },
-      );
-      final button = platform.buildGoogleButton();
+      _subscription ??= googleCredentialEvents.listen((token) {
+        if (token == null) {
+          widget.auth.showProviderError('Google 인증을 다시 진행해 주세요.');
+        } else {
+          unawaited(widget.auth.loginWithGoogle(token));
+        }
+      });
       setState(() {
-        _button = button;
         _loading = false;
       });
     } catch (_) {
@@ -119,9 +95,31 @@ class _GoogleLoginPanelState extends State<GoogleLoginPanel> {
         ],
       );
     }
-    return AbsorbPointer(
-      absorbing: widget.auth.busy,
-      child: ExcludeFocus(excluding: widget.auth.busy, child: _button!),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth.clamp(1.0, 400.0);
+        if (_button == null || _buttonWidth != width) {
+          _buttonWidth = width;
+          _button = platform.buildGoogleButton(
+            width,
+            onError: () {
+              if (!mounted) return;
+              setState(() {
+                _button = null;
+                _setupError = 'Google 로그인 버튼을 불러오지 못했습니다. 다시 시도해 주세요.';
+              });
+            },
+          );
+        }
+        return SizedBox(
+          width: width,
+          height: 40,
+          child: AbsorbPointer(
+            absorbing: widget.auth.busy,
+            child: ExcludeFocus(excluding: widget.auth.busy, child: _button!),
+          ),
+        );
+      },
     );
   }
 }

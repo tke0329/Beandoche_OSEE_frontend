@@ -23,15 +23,29 @@ Map<String, Object> sessionJson() => {
       .toIso8601String(),
 };
 
+Map<String, Object?> profileJson({bool completed = true}) => {
+  'userId': 42,
+  'profileCompleted': completed,
+  'nickname': completed ? '테스트회원' : null,
+  'imageBase64': null,
+  'nicknameNextChangeAt': null,
+};
+
+http.Response utf8Response(String body, int status) => http.Response.bytes(
+  utf8.encode(body),
+  status,
+  headers: const {'content-type': 'application/json; charset=utf-8'},
+);
+
 void main() {
   test('t1 sends Google ID token and parses service session', () async {
     final api = AuthApi(
       baseUrl: 'http://localhost:8080',
       client: MockClient((request) async {
-        expect(request.url.path, '/api/auth/social/google');
+        expect(request.url.path, '/api/auth/web/google');
         expect(jsonDecode(request.body), {'idToken': 'google-token'});
         expect(request.headers['Authorization'], isNull);
-        return http.Response(jsonEncode(sessionJson()), 200);
+        return utf8Response(jsonEncode(sessionJson()), 200);
       }),
     );
     final session = await api.loginWithGoogle('google-token');
@@ -47,7 +61,7 @@ void main() {
         final api = AuthApi(
           baseUrl: 'http://localhost:8080',
           client: MockClient(
-            (_) async => http.Response('secret-stack-trace', status),
+            (_) async => utf8Response('secret-stack-trace', status),
           ),
         );
         await expectLater(
@@ -67,7 +81,7 @@ void main() {
   test('t5 malformed successful response is rejected', () async {
     final api = AuthApi(
       baseUrl: 'http://localhost:8080',
-      client: MockClient((_) async => http.Response('{}', 200)),
+      client: MockClient((_) async => utf8Response('{}', 200)),
     );
     await expectLater(
       api.loginWithGoogle('google-token'),
@@ -81,7 +95,10 @@ void main() {
     final auth = AuthController(
       api: AuthApi(
         baseUrl: 'http://localhost:8080',
-        client: MockClient((_) {
+        client: MockClient((request) {
+          if (request.method == 'GET') {
+            return Future.value(utf8Response(jsonEncode(profileJson()), 200));
+          }
           calls++;
           return result.future;
         }),
@@ -91,7 +108,7 @@ void main() {
     await auth.loginWithGoogle('google-token');
     expect(auth.busy, isTrue);
     expect(auth.session, isNull);
-    result.complete(http.Response(jsonEncode(sessionJson()), 200));
+    result.complete(utf8Response(jsonEncode(sessionJson()), 200));
     await first;
     expect(calls, 1);
     expect(auth.isAuthenticated, isTrue);
@@ -128,7 +145,7 @@ void main() {
         isA<AuthFailure>().having((e) => e.message, 'message', contains('지연')),
       ),
     );
-    pending.complete(http.Response('{}', 500));
+    pending.complete(utf8Response('{}', 500));
     api.close();
   });
 
@@ -141,7 +158,7 @@ void main() {
     final auth = AuthController(
       api: AuthApi(
         baseUrl: 'http://localhost:8080',
-        client: MockClient((_) async => http.Response(jsonEncode(json), 200)),
+        client: MockClient((_) async => utf8Response(jsonEncode(json), 200)),
       ),
     );
     await auth.loginWithGoogle('test-token');
@@ -162,7 +179,7 @@ void main() {
       );
       final login = auth.loginWithGoogle('test-token');
       auth.dispose();
-      pending.complete(http.Response(jsonEncode(sessionJson()), 200));
+      pending.complete(utf8Response(jsonEncode(sessionJson()), 200));
       await login;
       expect(auth.session, isNull);
     },
