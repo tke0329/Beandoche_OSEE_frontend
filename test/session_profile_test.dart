@@ -15,6 +15,48 @@ import 'package:beandoche_osee_frontend/features/profile/profile_avatar.dart';
 import 'auth_test.dart' show sessionJson, profileJson, utf8Response;
 
 void main() {
+  testWidgets('t8 unfinished signup hides account menus and can exit safely', (
+    tester,
+  ) async {
+    var logoutCalls = 0;
+    final auth = AuthController(
+      api: AuthApi(
+        client: MockClient((request) async {
+          if (request.url.path.endsWith('/logout')) {
+            logoutCalls++;
+            return utf8Response('', 204);
+          }
+          return utf8Response(
+            jsonEncode(
+              request.method == 'GET'
+                  ? profileJson(completed: false)
+                  : sessionJson(),
+            ),
+            200,
+          );
+        }),
+      ),
+    );
+    final store = OseeStore();
+    await tester.runAsync(store.initialize);
+    await auth.loginWithGoogle('new-signup');
+    await tester.pumpWidget(OseeApp(initialAuth: auth, initialStore: store));
+    await tester.pumpAndSettle();
+    expect(find.text('프로필 만들기'), findsOneWidget);
+    expect(find.text('로그아웃'), findsNothing);
+    expect(find.byTooltip('마이페이지'), findsNothing);
+    expect(find.text('테스트회원'), findsNothing);
+    expect(find.text('나가기'), findsOneWidget);
+    await tester.tap(find.text('나가기'));
+    await tester.pumpAndSettle();
+    expect(logoutCalls, 1);
+    expect(auth.isAuthenticated, isFalse);
+    expect(find.text('Before you buy,'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+    auth.dispose();
+    store.dispose();
+  });
   testWidgets(
     't7 pending profile hover timer is harmless after logout removes the portal',
     (tester) async {

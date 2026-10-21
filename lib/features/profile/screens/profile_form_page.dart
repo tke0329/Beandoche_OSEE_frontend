@@ -133,7 +133,7 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
             if (widget.initial)
               TextButton(
                 onPressed: busy ? null : widget.auth.logout,
-                child: const Text('로그아웃'),
+                child: const Text('나가기'),
               ),
           ],
         ),
@@ -157,7 +157,7 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
                     const SizedBox(height: 12),
                     Text(
                       widget.initial
-                          ? '닉네임을 비우면 OSEE_랜덤번호로 만들어 드려요. 사진도 선택 사항이에요.'
+                          ? '소셜 인증이 완료됐어요. 프로필을 설정하면 가입이 완료돼요.\n닉네임을 비우면 OSEE_랜덤번호로 만들어 드려요. 사진도 선택 사항이에요.'
                           : 'OSEE에서 사용할 닉네임과 프로필 사진을 관리해요.',
                     ),
                     const SizedBox(height: 32),
