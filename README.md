@@ -20,6 +20,8 @@ flutter run -d web-server --web-hostname localhost --web-port 5173 --dart-define
 
 서버가 준비되면 평소 사용하는 브라우저에서 `http://localhost:5173`을 연다. 로그인 유지 확인은 같은 브라우저 프로필로 진행한다. `flutter run -d chrome`의 디버그 Chrome은 임시 프로필과 프로젝트 캐시를 사용하므로 일반 브라우저의 쿠키와 별개이며, 종료 방식에 따라 복원이 달라질 수 있다. 시크릿 모드나 종료 시 쿠키 삭제 설정에서는 로그인 유지가 보장되지 않는다.
 
+`web_dev_config.yaml`은 개발 서버 응답에 `Cross-Origin-Opener-Policy: same-origin-allow-popups`를 설정한다. Google·Kakao 로그인 팝업과 원래 화면의 통신을 허용하기 위한 설정이며 서버 재시작 후 적용된다. 배포 서버/CDN에서도 HTML 응답에 같은 헤더를 별도로 설정해야 한다. `index.html`의 meta 태그나 백엔드 API 헤더로 대신할 수 없다. `--web-enable-cross-origin-isolation`은 다른 격리 정책을 적용하므로 로그인 팝업과 함께 사용하기 전에 호환성을 검증한다. Google 또는 브라우저가 자체 정책으로 출력하는 경고는 앱 예외와 구분하며 콘솔 출력을 숨기지 않는다. [Google COOP 설정 안내](https://developers.google.com/identity/gsi/web/guides/get-google-api-clientid#cross_origin_opener_policy).
+
 기본 진입 화면은 공개 홈이다. 헤더 프로필 영역의 로그인 버튼을 누르면 로그인 화면으로 이동한다. 개인 화면은 로그인이 필요하며 로그아웃하면 공개 홈으로 돌아간다. 앱 재접속 및 브라우저 복귀 시 HttpOnly 쿠키로 서버 세션을 확인한다.
 
 Google Cloud의 승인된 JavaScript 원본에는 `http://localhost`와 `http://localhost:5173`을 등록한다. 웹 공식 버튼에서 ID Token을 받는 흐름이므로 백엔드 Google callback URI는 사용하지 않는다.
