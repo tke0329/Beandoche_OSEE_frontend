@@ -19,7 +19,7 @@ class MyPage extends StatelessWidget {
       builder: (dialogContext) => AlertDialog(
         title: const Text('정말 탈퇴하시겠어요?'),
         content: const Text(
-          '프로필과 사진이 삭제되고 모든 기기의 로그인 세션이 종료됩니다. 삭제한 정보는 복구할 수 없습니다.\n\n소셜 계정 자체는 삭제되지 않습니다. Google 연결은 탈퇴 후 계정 설정에서 직접 해제해야 합니다.',
+          '프로필과 사진이 삭제되고 모든 기기의 로그인 세션이 종료됩니다. 삭제한 정보는 복구할 수 없습니다.\n\n소셜 계정 자체는 삭제되지 않습니다. Google 연결은 자동 해제를 요청하며, 같은 Google 프로젝트에 부여한 앱 권한도 철회될 수 있습니다. 실패하면 수동 해제를 안내합니다.',
         ),
         actions: [
           TextButton(

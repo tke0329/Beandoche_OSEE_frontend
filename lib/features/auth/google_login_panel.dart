@@ -5,19 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import 'auth_controller.dart';
+import 'google_sdk.dart';
 import 'google_button_stub.dart'
     if (dart.library.js_interop) 'google_button_web.dart'
     as platform;
-
-Future<void>? _sdkReady;
-
-Future<void> _initializeSdk(String clientId) => _sdkReady ??= GoogleSignIn
-    .instance
-    .initialize(clientId: clientId)
-    .catchError((Object error) {
-      _sdkReady = null;
-      throw error;
-    });
 
 class GoogleLoginPanel extends StatefulWidget {
   const GoogleLoginPanel({super.key, required this.auth});
@@ -62,7 +53,7 @@ class _GoogleLoginPanelState extends State<GoogleLoginPanel> {
       _setupError = null;
     });
     try {
-      await _initializeSdk(clientId).timeout(const Duration(seconds: 15));
+      await initializeGoogleSdk(clientId).timeout(const Duration(seconds: 15));
       if (!mounted) return;
       _subscription ??= GoogleSignIn.instance.authenticationEvents.listen(
         (event) {

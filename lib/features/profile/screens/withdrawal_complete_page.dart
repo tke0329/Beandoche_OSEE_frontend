@@ -27,9 +27,19 @@ class WithdrawalCompletePage extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               const Text('프로필과 사진을 삭제하고 모든 로그인 세션을 종료했습니다.'),
-              if (auth.withdrawalResult?.googleUnlinkRequired ?? false) ...[
+              if (auth.withdrawalResult?.googleUnlinkInProgress ?? false) ...[
                 const SizedBox(height: 24),
-                const Text('Google 계정에 남아 있는 OSEE 연결은 계정 설정에서 직접 삭제해 주세요.'),
+                const LinearProgressIndicator(semanticsLabel: 'Google 연결 해제 중'),
+                const Text('Google 연결을 자동으로 해제하고 있습니다.'),
+              ] else if (auth.withdrawalResult?.googleUnlinked ?? false) ...[
+                const SizedBox(height: 24),
+                const Text('Google 계정 연결도 자동으로 해제했습니다.'),
+              ] else if (auth.withdrawalResult?.googleUnlinkRequired ??
+                  false) ...[
+                const SizedBox(height: 24),
+                const Text(
+                  'Google 자동 연결 해제를 완료하지 못했습니다. 계정 설정에서 OSEE 연결을 직접 삭제해 주세요.',
+                ),
                 TextButton(
                   onPressed: platform.openGoogleConnections,
                   child: const Text('Google 계정 연결 설정 열기'),
@@ -38,6 +48,9 @@ class WithdrawalCompletePage extends StatelessWidget {
                   'https://myaccount.google.com/connections',
                 ),
               ],
+              if (auth.withdrawalResult?.completionWarning
+                  case final String warning)
+                Text(warning),
               if (auth.withdrawalResult?.kakaoUnlinkPending ?? false) ...[
                 const SizedBox(height: 24),
                 const Text(
@@ -46,7 +59,10 @@ class WithdrawalCompletePage extends StatelessWidget {
               ],
               const SizedBox(height: 28),
               FilledButton(
-                onPressed: auth.finishWithdrawal,
+                onPressed:
+                    (auth.withdrawalResult?.googleUnlinkInProgress ?? false)
+                    ? null
+                    : auth.finishWithdrawal,
                 child: const Text('홈으로 돌아가기'),
               ),
             ],

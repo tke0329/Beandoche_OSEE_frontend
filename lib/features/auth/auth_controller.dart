@@ -6,6 +6,9 @@ import 'package:flutter/widgets.dart';
 import '../profile/profile_data.dart';
 import 'auth_api.dart';
 import 'kakao_gateway.dart';
+import 'google_revoke_stub.dart'
+    if (dart.library.js_interop) 'google_revoke_web.dart'
+    as google_platform;
 import 'credential_client_stub.dart'
     if (dart.library.js_interop) 'credential_client_web.dart'
     as session_platform;
@@ -24,9 +27,13 @@ class AuthScope extends InheritedNotifier<AuthController> {
 }
 
 class AuthController extends ChangeNotifier {
-  AuthController({AuthApi? api, KakaoGateway? kakaoGateway})
-    : _api = api ?? AuthApi(),
-      _kakao = kakaoGateway ?? platform.createKakaoGateway() {
+  AuthController({
+    AuthApi? api,
+    KakaoGateway? kakaoGateway,
+    Future<bool> Function(List<String>)? googleRevoker,
+  }) : _api = api ?? AuthApi(),
+       _kakao = kakaoGateway ?? platform.createKakaoGateway(),
+       _googleRevoker = googleRevoker ?? google_platform.revokeGoogleSubjects {
     _cancelSessionWatch = session_platform.watchSessionEnd(() {
       if (!_disposed) {
         _clearSession();
@@ -36,6 +43,7 @@ class AuthController extends ChangeNotifier {
   }
   final AuthApi _api;
   final KakaoGateway _kakao;
+  final Future<bool> Function(List<String>) _googleRevoker;
   AuthSession? _session;
   AuthSession? get session => _session;
   ProfileData? profile;
@@ -280,11 +288,17 @@ class AuthController extends ChangeNotifier {
     try {
       if (_restoration != null) await _restoration;
       if (_disposed || _session == null) return false;
-      final result = await _api.withdraw(_session!.accessToken);
+      final oldAccess = _session!.accessToken;
+      final result = await _api.withdraw(oldAccess);
       if (_disposed) return false;
       _clearSession();
-      withdrawalResult = result;
+      withdrawalResult = result.googleStatus(
+        pending: result.googleSubjects.isNotEmpty,
+      );
       session_platform.publishSessionEnd();
+      if (result.googleSubjects.isNotEmpty) {
+        unawaited(_finishGoogleUnlink(result, oldAccess, _sessionGeneration));
+      }
       return true;
     } on AuthFailure catch (failure) {
       if (!_disposed) error = failure.message;
@@ -297,6 +311,31 @@ class AuthController extends ChangeNotifier {
         busy = false;
         notifyListeners();
       }
+    }
+  }
+
+  Future<void> _finishGoogleUnlink(
+    WithdrawalResult result,
+    String oldAccess,
+    int generation,
+  ) async {
+    var succeeded = false;
+    String? warning;
+    try {
+      succeeded = await _googleRevoker(result.googleSubjects);
+      if (succeeded) await _api.confirmGoogleUnlink(oldAccess);
+    } catch (_) {
+      warning = succeeded ? 'Google 연결은 해제했지만 완료 기록을 저장하지 못했습니다.' : null;
+    }
+    if (!_disposed &&
+        withdrawalResult != null &&
+        generation == _sessionGeneration) {
+      withdrawalResult = result.googleStatus(
+        pending: false,
+        succeeded: succeeded,
+        warning: warning,
+      );
+      notifyListeners();
     }
   }
 

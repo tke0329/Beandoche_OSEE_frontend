@@ -66,9 +66,30 @@ class WithdrawalResult {
   const WithdrawalResult({
     required this.googleUnlinkRequired,
     required this.kakaoUnlinkPending,
+    this.googleSubjects = const [],
+    this.googleUnlinkInProgress = false,
+    this.googleUnlinked = false,
+    this.completionWarning,
   });
   final bool googleUnlinkRequired;
   final bool kakaoUnlinkPending;
+  final List<String> googleSubjects;
+  final bool googleUnlinkInProgress;
+  final bool googleUnlinked;
+  final String? completionWarning;
+
+  WithdrawalResult googleStatus({
+    required bool pending,
+    bool succeeded = false,
+    String? warning,
+  }) => WithdrawalResult(
+    googleUnlinkRequired: googleUnlinkRequired,
+    kakaoUnlinkPending: kakaoUnlinkPending,
+    googleSubjects: pending ? googleSubjects : const [],
+    googleUnlinkInProgress: pending,
+    googleUnlinked: succeeded,
+    completionWarning: warning,
+  );
 }
 
 class AuthApi {
@@ -223,14 +244,36 @@ class AuthApi {
             'googleUnlinkRequired': bool google,
             'kakaoUnlinkPending': bool kakao,
           }) {
+            final hints = body['googleSubjects'];
+            final subjects =
+                hints is List &&
+                    hints.length <= 10 &&
+                    hints.every(
+                      (value) =>
+                          value is String &&
+                          value.isNotEmpty &&
+                          value.length <= 255,
+                    )
+                ? List<String>.from(hints)
+                : <String>[];
             return WithdrawalResult(
               googleUnlinkRequired: google,
               kakaoUnlinkPending: kakao,
+              googleSubjects: subjects,
             );
           }
           throw const FormatException('Invalid withdrawal response');
         }),
       );
+
+  Future<void> confirmGoogleUnlink(String oldAccessToken) => _safe(() async {
+    _read(
+      await _client.post(
+        _uri('/api/auth/web/withdrawal/google-complete'),
+        headers: {'Authorization': 'Bearer $oldAccessToken'},
+      ),
+    );
+  });
 
   Future<ProfileData> profile(String accessToken) => _safe(
     () async => ProfileData.fromJson(
