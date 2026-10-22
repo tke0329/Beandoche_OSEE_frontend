@@ -1,5 +1,5 @@
 # Miscellaneous
-# Local OAuth/build configuration (keep the shared example under config/).
+# Local OAuth/build configuration (only .env.example is shared).
 .env
 .env.*
 !.env.example
