@@ -1,3 +1,4 @@
+import 'package:beandoche_osee_frontend/features/clothes/screens/clothes_page.dart';
 import 'package:flutter/gestures.dart';
 import 'package:beandoche_osee_frontend/core/router/osee_app.dart';
 import 'package:beandoche_osee_frontend/core/providers/osee_store.dart';
@@ -74,7 +75,7 @@ void main() {
       OseeApp(initialAuth: auth, initialStore: store, categoryApi: api),
     );
     await tester.pumpAndSettle();
-    expect(tester.getTopLeft(find.text('CLOTHES')).dx, lessThan(200));
+    expect(tester.getTopLeft(find.text('CLOTHES')).dx, closeTo(330, 2));
     final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
     await mouse.addPointer(location: Offset.zero);
     await mouse.moveTo(tester.getCenter(find.text('CLOTHES')));
@@ -83,12 +84,27 @@ void main() {
     expect(find.text('Outerwear'), findsOneWidget);
     expect(find.text('긴소매 티셔츠'), findsOneWidget);
     expect(find.text('후드 집업'), findsOneWidget);
+    for (final label in ['All', 'Top', 'Outerwear']) {
+      expect(
+        tester.widget<Text>(find.text(label)).style?.fontWeight,
+        FontWeight.w700,
+      );
+    }
+    expect(
+      tester.getTopLeft(find.text('Outerwear')).dx,
+      closeTo(tester.getTopLeft(find.text('후드 집업')).dx, 1),
+    );
     expect(find.byType(ChoiceChip), findsNothing);
     await tester.tap(find.text('후드 집업'));
     await tester.pumpAndSettle();
     expect(find.text('선택한 카테고리의 상품은 준비 중입니다.'), findsOneWidget);
     expect(find.text('Top'), findsNothing);
     expect(find.text('/ 후드 집업'), findsOneWidget);
+    expect(tester.getTopLeft(find.text('Outerwear')).dx, closeTo(108, 2));
+    final heading = tester.widget<Text>(find.text('Outerwear'));
+    expect(heading.style?.fontWeight, FontWeight.w700);
+    expect(heading.style?.fontFamily, 'Inter');
+
     expect(
       tester.getTopLeft(find.text('/ 후드 집업')).dx,
       greaterThan(tester.getTopLeft(find.text('Outerwear')).dx),
@@ -97,6 +113,59 @@ void main() {
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox());
     await mouse.removePointer();
+    auth.dispose();
+    store.dispose();
+  });
+
+  testWidgets('t11 All과 모든 대분류 제목은 같은 왼쪽 기준선과 Bold를 사용한다', (tester) async {
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final auth = makeAuth();
+    await auth.loginWithGoogle('test');
+    final data = [
+      ...treeJson(),
+      {'id': 3, 'code': 'PANTS', 'name': '바지', 'children': []},
+      {'id': 4, 'code': 'DRESS_SKIRT', 'name': '원피스/스커트', 'children': []},
+    ];
+    final catalog = CategoryCatalog(
+      auth: auth,
+      api: CategoryApi(
+        client: MockClient((_) async => utf8Response(jsonEncode(data), 200)),
+      ),
+    );
+    await catalog.load();
+    final store = OseeStore();
+    for (final entry in {
+      'all': 'All',
+      'TOP': 'Top',
+      'OUTERWEAR': 'Outerwear',
+      'PANTS': 'Pants',
+      'DRESS_SKIRT': 'Dress/Skirt',
+    }.entries) {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ClothesPage(
+              store: store,
+              category: entry.key,
+              subcategory: null,
+              filter: (value, [sub]) {},
+              categories: catalog,
+              onLogin: () {},
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final heading = find.text(entry.value);
+      expect(tester.getTopLeft(heading).dx, closeTo(108, 1));
+      expect(tester.widget<Text>(heading).style?.fontWeight, FontWeight.w700);
+      expect(tester.takeException(), isNull);
+    }
+    await tester.pumpWidget(const SizedBox());
+    catalog.dispose();
     auth.dispose();
     store.dispose();
   });

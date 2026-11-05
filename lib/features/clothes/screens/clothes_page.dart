@@ -41,12 +41,12 @@ class ClothesPage extends StatelessWidget {
           children: [
             Center(
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 1120),
+                constraints: const BoxConstraints.tightFor(width: 1064),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Wrap(
-                      spacing: 12,
+                      spacing: 8,
                       crossAxisAlignment: WrapCrossAlignment.end,
                       children: [
                         Text(
@@ -54,17 +54,25 @@ class ClothesPage extends StatelessWidget {
                               ? 'All'
                               : categoryLabel(root.code, root.name),
                           style: TextStyle(
-                            fontSize: wide ? 40 : 30,
-                            fontWeight: FontWeight.w500,
-                            color: ink,
+                            fontFamily: 'Inter',
+                            fontSize: wide ? 38 : 30,
+                            height: 1,
+                            letterSpacing: wide ? -.38 : -.3,
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xff141414),
                           ),
                         ),
                         if (child != null)
                           Padding(
-                            padding: const EdgeInsets.only(bottom: 4),
+                            padding: const EdgeInsets.only(bottom: 3),
                             child: Text(
                               '/ ${child.name}',
-                              style: const TextStyle(fontSize: 20, color: ink),
+                              style: const TextStyle(
+                                fontFamily: 'Inter',
+                                fontSize: 14,
+                                height: 1,
+                                color: Color(0xff141414),
+                              ),
                             ),
                           ),
                       ],

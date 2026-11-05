@@ -44,9 +44,10 @@ class _CategoryPanelState extends State<CategoryPanel> {
   );
 
   TextStyle _headingStyle(bool selected) => TextStyle(
+    fontFamily: 'Inter',
     fontSize: 16,
-    color: selected ? const Color(0xff171717) : const Color(0xff43474f),
-    fontWeight: selected ? FontWeight.w700 : FontWeight.w400,
+    color: selected ? const Color(0xff141414) : const Color(0xff43474f),
+    fontWeight: FontWeight.w700,
   );
 
   @override
@@ -113,7 +114,7 @@ class _CategoryPanelState extends State<CategoryPanel> {
               SizedBox(
                 width: 200,
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     TextButton(
                       style: _menuButtonStyle,
@@ -130,8 +131,9 @@ class _CategoryPanelState extends State<CategoryPanel> {
                         child: Text(
                           child.name,
                           style: TextStyle(
+                            fontFamily: 'Inter',
                             fontSize: 14,
-                            color: const Color(0xff8b929e),
+                            color: const Color(0xff8a9099),
                             fontWeight: widget.subcategory == child.code
                                 ? FontWeight.w700
                                 : FontWeight.w400,
