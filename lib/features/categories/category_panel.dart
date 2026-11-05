@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import 'category_catalog.dart';
+import 'catalog_category.dart';
 import 'category_labels.dart';
 import '../clothes/widgets/category_pills.dart';
 
@@ -50,6 +51,59 @@ class _CategoryPanelState extends State<CategoryPanel> {
     fontWeight: FontWeight.w700,
   );
 
+  Widget _menuItem(CatalogCategory root, CatalogCategory child) => TextButton(
+    style: _menuButtonStyle,
+    onPressed: () => widget.onSelect(root.code, child.code),
+    child: Text(
+      child.name,
+      style: TextStyle(
+        fontFamily: 'Inter',
+        fontSize: 14,
+        color: const Color(0xff8a9099),
+        fontWeight: widget.subcategory == child.code
+            ? FontWeight.w700
+            : FontWeight.w400,
+      ),
+    ),
+  );
+
+  Widget _menuGroup(CatalogCategory root, double columnWidth, double gap) {
+    final items = root.descendants.toList();
+    final split = root.code == 'OUTERWEAR' && items.length > 1;
+    final midpoint = (items.length + 1) ~/ 2;
+    Widget column(Iterable<CatalogCategory> children) => Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [for (final child in children) _menuItem(root, child)],
+    );
+    return SizedBox(
+      width: split ? columnWidth * 2 + gap : columnWidth,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          TextButton(
+            style: _menuButtonStyle,
+            onPressed: () => widget.onSelect(root.code),
+            child: Text(
+              categoryLabel(root.code, root.name),
+              style: _headingStyle(widget.selected == root.code),
+            ),
+          ),
+          if (split)
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(child: column(items.take(midpoint))),
+                SizedBox(width: gap),
+                Expanded(child: column(items.skip(midpoint))),
+              ],
+            )
+          else
+            column(items),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) => ListenableBuilder(
     listenable: widget.catalog,
@@ -94,56 +148,44 @@ class _CategoryPanelState extends State<CategoryPanel> {
         return const Text('표시할 카테고리가 없습니다.');
       }
       if (widget.menu) {
-        return Wrap(
-          spacing: 28,
-          runSpacing: 20,
-          crossAxisAlignment: WrapCrossAlignment.start,
-          children: [
-            SizedBox(
-              width: 90,
-              child: TextButton(
-                style: _menuButtonStyle,
-                onPressed: () => widget.onSelect('all'),
-                child: Text(
-                  'All',
-                  style: _headingStyle(widget.selected == 'all'),
-                ),
-              ),
-            ),
-            for (final root in catalog.categories)
-              SizedBox(
-                width: 200,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    TextButton(
-                      style: _menuButtonStyle,
-                      onPressed: () => widget.onSelect(root.code),
-                      child: Text(
-                        categoryLabel(root.code, root.name),
-                        style: _headingStyle(widget.selected == root.code),
-                      ),
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            const allWidth = 72.0;
+            const gap = 20.0;
+            const columnGap = 16.0;
+            final splitOuter = catalog.categories.any(
+              (root) => root.code == 'OUTERWEAR' && root.descendants.length > 1,
+            );
+            final units = catalog.categories.length + (splitOuter ? 1 : 0);
+            final columnWidth =
+                ((constraints.maxWidth -
+                            allWidth -
+                            gap * catalog.categories.length -
+                            (splitOuter ? columnGap : 0)) /
+                        units)
+                    .clamp(140.0, 200.0)
+                    .toDouble();
+            return Wrap(
+              spacing: gap,
+              runSpacing: 20,
+              crossAxisAlignment: WrapCrossAlignment.start,
+              children: [
+                SizedBox(
+                  width: allWidth,
+                  child: TextButton(
+                    style: _menuButtonStyle,
+                    onPressed: () => widget.onSelect('all'),
+                    child: Text(
+                      'All',
+                      style: _headingStyle(widget.selected == 'all'),
                     ),
-                    for (final child in root.descendants)
-                      TextButton(
-                        style: _menuButtonStyle,
-                        onPressed: () => widget.onSelect(root.code, child.code),
-                        child: Text(
-                          child.name,
-                          style: TextStyle(
-                            fontFamily: 'Inter',
-                            fontSize: 14,
-                            color: const Color(0xff8a9099),
-                            fontWeight: widget.subcategory == child.code
-                                ? FontWeight.w700
-                                : FontWeight.w400,
-                          ),
-                        ),
-                      ),
-                  ],
+                  ),
                 ),
-              ),
-          ],
+                for (final root in catalog.categories)
+                  _menuGroup(root, columnWidth, columnGap),
+              ],
+            );
+          },
         );
       }
       final selected = catalog.categories

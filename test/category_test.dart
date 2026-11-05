@@ -170,6 +170,72 @@ void main() {
     store.dispose();
   });
 
+  testWidgets('t12 아우터 22개를 순서대로 11개씩 두 열로 나누고 선택한다', (tester) async {
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final auth = makeAuth();
+    await auth.loginWithGoogle('test');
+    final data = treeJson();
+    (data.first as Map<String, Object>)['children'] = List.generate(
+      22,
+      (i) => {
+        'id': 100 + i,
+        'code': 'OUTER_$i',
+        'name': '아우터 $i',
+        'children': [],
+      },
+    );
+    data.addAll([
+      {'id': 3, 'code': 'PANTS', 'name': '바지', 'children': []},
+      {'id': 4, 'code': 'DRESS_SKIRT', 'name': '원피스/스커트', 'children': []},
+    ]);
+    final catalog = CategoryCatalog(
+      auth: auth,
+      api: CategoryApi(
+        client: MockClient((_) async => utf8Response(jsonEncode(data), 200)),
+      ),
+    );
+    await catalog.load();
+    String? selected;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 24, 136, 24),
+            child: CategoryPanel(
+              catalog: catalog,
+              selected: 'all',
+              subcategory: null,
+              menu: true,
+              onSelect: (root, [child]) => selected = child,
+              onLogin: () {},
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final first = tester.getTopLeft(find.text('아우터 0'));
+    final second = tester.getTopLeft(find.text('아우터 11'));
+    expect(second.dy, closeTo(first.dy, 1));
+    expect(second.dx, greaterThan(first.dx));
+    expect(tester.getTopLeft(find.text('아우터 10')).dx, closeTo(first.dx, 1));
+    expect(tester.getTopLeft(find.text('아우터 21')).dx, closeTo(second.dx, 1));
+    expect(tester.getBottomRight(find.text('아우터 21')).dy, lessThan(736));
+    expect(
+      tester.getTopLeft(find.text('Dress/Skirt')).dy,
+      closeTo(tester.getTopLeft(find.text('Outerwear')).dy, 1),
+    );
+    await tester.tap(find.text('아우터 21'));
+    expect(selected, 'OUTER_21');
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+    catalog.dispose();
+    auth.dispose();
+  });
+
   test('t1 인증 헤더와 서버의 계층 및 순서를 보존한다', () async {
     final api = CategoryApi(
       client: MockClient((request) async {

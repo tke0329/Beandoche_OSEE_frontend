@@ -29,7 +29,10 @@ class ClothesHoverMenu extends StatelessWidget {
       elevation: 3,
       child: ConstrainedBox(
         constraints: BoxConstraints(
-          maxHeight: MediaQuery.sizeOf(context).height * .6,
+          maxHeight: (MediaQuery.sizeOf(context).height - 64).clamp(
+            0.0,
+            double.infinity,
+          ),
         ),
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
