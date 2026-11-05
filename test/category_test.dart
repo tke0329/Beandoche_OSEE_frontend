@@ -78,15 +78,15 @@ void main() {
     await mouse.addPointer(location: Offset.zero);
     await mouse.moveTo(tester.getCenter(find.text('CLOTHES')));
     await tester.pumpAndSettle();
-    expect(find.text('상의'), findsOneWidget);
-    expect(find.text('아우터'), findsOneWidget);
+    expect(find.text('Top'), findsOneWidget);
+    expect(find.text('Outerwear'), findsOneWidget);
     expect(find.text('긴소매 티셔츠'), findsOneWidget);
     expect(find.text('후드 집업'), findsOneWidget);
     expect(find.byType(ChoiceChip), findsNothing);
     await tester.tap(find.text('후드 집업'));
     await tester.pumpAndSettle();
     expect(find.text('선택한 카테고리의 상품은 준비 중입니다.'), findsOneWidget);
-    expect(find.text('상의'), findsNothing);
+    expect(find.text('Top'), findsNothing);
     expect(find.text('후드 집업'), findsOneWidget);
     expect(find.byType(ChoiceChip), findsNothing);
     expect(tester.takeException(), isNull);

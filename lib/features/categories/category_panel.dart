@@ -35,6 +35,20 @@ class _CategoryPanelState extends State<CategoryPanel> {
     });
   }
 
+  String _menuLabel(String code, String fallback) => switch (code) {
+    'TOP' => 'Top',
+    'OUTERWEAR' => 'Outerwear',
+    'PANTS' => 'Pants',
+    'DRESS_SKIRT' => 'Dress/Skirt',
+    _ => fallback,
+  };
+
+  TextStyle _headingStyle(bool selected) => TextStyle(
+    fontSize: 16,
+    color: selected ? const Color(0xff171717) : const Color(0xff43474f),
+    fontWeight: selected ? FontWeight.w700 : FontWeight.w400,
+  );
+
   @override
   Widget build(BuildContext context) => ListenableBuilder(
     listenable: widget.catalog,
@@ -88,7 +102,10 @@ class _CategoryPanelState extends State<CategoryPanel> {
               width: 80,
               child: TextButton(
                 onPressed: () => widget.onSelect('all'),
-                child: const Text('전체'),
+                child: Text(
+                  'All',
+                  style: _headingStyle(widget.selected == 'all'),
+                ),
               ),
             ),
             for (final root in catalog.categories)
@@ -100,11 +117,8 @@ class _CategoryPanelState extends State<CategoryPanel> {
                     TextButton(
                       onPressed: () => widget.onSelect(root.code),
                       child: Text(
-                        root.name,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                        ),
+                        _menuLabel(root.code, root.name),
+                        style: _headingStyle(widget.selected == root.code),
                       ),
                     ),
                     for (final child in root.descendants)
@@ -114,6 +128,7 @@ class _CategoryPanelState extends State<CategoryPanel> {
                           child.name,
                           style: TextStyle(
                             fontSize: 14,
+                            color: const Color(0xff8b929e),
                             fontWeight: widget.subcategory == child.code
                                 ? FontWeight.w700
                                 : FontWeight.w400,
