@@ -1,3 +1,4 @@
+import 'package:beandoche_osee_frontend/features/categories/category_api.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/widgets.dart';
 
@@ -8,6 +9,7 @@ import 'package:beandoche_osee_frontend/features/auth/auth_api.dart';
 import 'package:beandoche_osee_frontend/features/auth/auth_controller.dart';
 
 import 'auth_test.dart' show sessionJson, profileJson, utf8Response;
+import 'category_test.dart' show treeJson;
 
 import 'package:beandoche_osee_frontend/core/router/osee_app.dart';
 import 'package:beandoche_osee_frontend/features/clothes/screens/clothes_page.dart';
@@ -52,7 +54,17 @@ void main() {
       ),
     );
     await tester.runAsync(() => auth.loginWithGoogle('test-google-token'));
-    await tester.pumpWidget(OseeApp(initialStore: store, initialAuth: auth));
+    await tester.pumpWidget(
+      OseeApp(
+        initialStore: store,
+        initialAuth: auth,
+        categoryApi: CategoryApi(
+          client: MockClient(
+            (_) async => utf8Response(jsonEncode(treeJson()), 200),
+          ),
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('Before you buy,'), findsOneWidget);
@@ -61,6 +73,14 @@ void main() {
 
     expect(find.byType(ClothesPage), findsOneWidget);
     expect(find.text('denim pants (black)'), findsOneWidget);
+    await tester.tap(find.text('상의'));
+    await tester.pumpAndSettle();
+    expect(find.text('긴소매 티셔츠'), findsOneWidget);
+    await tester.tap(find.text('긴소매 티셔츠'));
+    await tester.pumpAndSettle();
+    expect(find.text('선택한 카테고리의 상품은 준비 중입니다.'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
     await tester.pumpWidget(const SizedBox.shrink());
     auth.dispose();
     store.dispose();
