@@ -74,6 +74,7 @@ void main() {
       OseeApp(initialAuth: auth, initialStore: store, categoryApi: api),
     );
     await tester.pumpAndSettle();
+    expect(tester.getTopLeft(find.text('CLOTHES')).dx, lessThan(200));
     final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
     await mouse.addPointer(location: Offset.zero);
     await mouse.moveTo(tester.getCenter(find.text('CLOTHES')));
@@ -87,7 +88,11 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('선택한 카테고리의 상품은 준비 중입니다.'), findsOneWidget);
     expect(find.text('Top'), findsNothing);
-    expect(find.text('후드 집업'), findsOneWidget);
+    expect(find.text('/ 후드 집업'), findsOneWidget);
+    expect(
+      tester.getTopLeft(find.text('/ 후드 집업')).dx,
+      greaterThan(tester.getTopLeft(find.text('Outerwear')).dx),
+    );
     expect(find.byType(ChoiceChip), findsNothing);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox());

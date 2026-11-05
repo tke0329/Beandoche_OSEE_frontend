@@ -26,11 +26,11 @@ class OseeHeader extends StatelessWidget {
     child: SizedBox(
       height: 64,
       child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: wide ? 50 : 20),
+        padding: EdgeInsets.symmetric(horizontal: wide ? 24 : 20),
         child: Row(
           children: [
             SizedBox(
-              width: wide ? 260 : null,
+              width: wide ? 132 : null,
               child: InkWell(
                 onTap: () => onNavigate(0),
                 child: const Text(

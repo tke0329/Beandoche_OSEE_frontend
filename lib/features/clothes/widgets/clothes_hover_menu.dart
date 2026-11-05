@@ -33,7 +33,8 @@ class ClothesHoverMenu extends StatelessWidget {
         ),
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
-          child: Center(
+          child: Align(
+            alignment: Alignment.topLeft,
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 1120),
               child: CategoryPanel(

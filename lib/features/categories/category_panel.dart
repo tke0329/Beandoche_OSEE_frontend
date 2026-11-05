@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import 'category_catalog.dart';
+import 'category_labels.dart';
 import '../clothes/widgets/category_pills.dart';
 
 class CategoryPanel extends StatefulWidget {
@@ -35,13 +36,12 @@ class _CategoryPanelState extends State<CategoryPanel> {
     });
   }
 
-  String _menuLabel(String code, String fallback) => switch (code) {
-    'TOP' => 'Top',
-    'OUTERWEAR' => 'Outerwear',
-    'PANTS' => 'Pants',
-    'DRESS_SKIRT' => 'Dress/Skirt',
-    _ => fallback,
-  };
+  ButtonStyle get _menuButtonStyle => TextButton.styleFrom(
+    alignment: Alignment.centerLeft,
+    padding: const EdgeInsets.symmetric(vertical: 4),
+    minimumSize: const Size(0, 32),
+    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+  );
 
   TextStyle _headingStyle(bool selected) => TextStyle(
     fontSize: 16,
@@ -99,8 +99,9 @@ class _CategoryPanelState extends State<CategoryPanel> {
           crossAxisAlignment: WrapCrossAlignment.start,
           children: [
             SizedBox(
-              width: 80,
+              width: 90,
               child: TextButton(
+                style: _menuButtonStyle,
                 onPressed: () => widget.onSelect('all'),
                 child: Text(
                   'All',
@@ -115,14 +116,16 @@ class _CategoryPanelState extends State<CategoryPanel> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     TextButton(
+                      style: _menuButtonStyle,
                       onPressed: () => widget.onSelect(root.code),
                       child: Text(
-                        _menuLabel(root.code, root.name),
+                        categoryLabel(root.code, root.name),
                         style: _headingStyle(widget.selected == root.code),
                       ),
                     ),
                     for (final child in root.descendants)
                       TextButton(
+                        style: _menuButtonStyle,
                         onPressed: () => widget.onSelect(root.code, child.code),
                         child: Text(
                           child.name,
