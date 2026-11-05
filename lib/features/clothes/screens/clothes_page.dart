@@ -1,10 +1,10 @@
-import 'package:beandoche_osee_frontend/core/providers/osee_store.dart';
-import 'package:beandoche_osee_frontend/core/theme/osee_theme.dart';
-import 'package:beandoche_osee_frontend/core/utils/categories.dart';
-import 'package:beandoche_osee_frontend/features/clothes/widgets/category_pills.dart';
-import 'package:beandoche_osee_frontend/features/clothes/widgets/garment_grid.dart';
-
 import 'package:flutter/material.dart';
+
+import '../../../core/providers/osee_store.dart';
+import '../../../core/theme/osee_theme.dart';
+import '../../categories/category_catalog.dart';
+import '../../categories/category_panel.dart';
+import '../widgets/garment_grid.dart';
 
 class ClothesPage extends StatelessWidget {
   const ClothesPage({
@@ -13,103 +13,96 @@ class ClothesPage extends StatelessWidget {
     required this.category,
     required this.subcategory,
     required this.filter,
+    required this.categories,
+    required this.onLogin,
   });
   final OseeStore store;
   final String category;
   final String? subcategory;
   final void Function(String, [String?]) filter;
+  final CategoryCatalog categories;
+  final VoidCallback onLogin;
+
   @override
   Widget build(BuildContext context) {
     final wide = MediaQuery.sizeOf(context).width >= 1050;
-    final items = store.catalog
-        .where(
-          (item) =>
-              (category == 'all' || item.category == category) &&
-              (subcategory == null || item.sub == subcategory),
-        )
-        .toList();
-    return ListView(
-      padding: EdgeInsets.fromLTRB(
-        wide ? 32 : 20,
-        wide ? 12 : 20,
-        wide ? 32 : 20,
-        60,
-      ),
-      children: [
-        Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1120),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                RichText(
-                  text: TextSpan(
-                    style: const TextStyle(color: ink),
-                    children: [
-                      TextSpan(
-                        text: category == 'all'
-                            ? 'All'
-                            : '${category[0].toUpperCase()}${category.substring(1)}',
-                        style: TextStyle(
-                          fontSize: wide ? 40 : 30,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      if (subcategory != null)
-                        TextSpan(
-                          text: ' / $subcategory',
-                          style: TextStyle(
-                            fontSize: wide ? 22 : 18,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-                if (!wide) ...[
-                  const SizedBox(height: 16),
-                  CategoryPills(
-                    selected: category,
-                    onSelect: (value) => filter(value),
-                  ),
-                  if (sections[category]!.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: [
-                          ChoiceChip(
-                            label: const Text('전체'),
-                            selected: subcategory == null,
-                            onSelected: (_) => filter(category),
-                          ),
-                          for (final sub in sections[category]!)
-                            Padding(
-                              padding: const EdgeInsets.only(left: 8),
-                              child: ChoiceChip(
-                                label: Text(sub),
-                                selected: subcategory == sub,
-                                onSelected: (_) => filter(category, sub),
-                              ),
-                            ),
-                        ],
+    return ListenableBuilder(
+      listenable: categories,
+      builder: (context, _) {
+        final root = categories.categories
+            .where((c) => c.code == category)
+            .firstOrNull;
+        final child = root?.descendants
+            .where((c) => c.code == subcategory)
+            .firstOrNull;
+        return ListView(
+          padding: EdgeInsets.fromLTRB(wide ? 32 : 20, 20, wide ? 32 : 20, 60),
+          children: [
+            Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1120),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      root == null ? '전체 의류' : root.name,
+                      style: TextStyle(
+                        fontSize: wide ? 40 : 30,
+                        fontWeight: FontWeight.w500,
+                        color: ink,
                       ),
                     ),
+                    if (child != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Text(
+                          child.name,
+                          style: const TextStyle(fontSize: 20),
+                        ),
+                      ),
+                    const SizedBox(height: 20),
+                    CategoryPanel(
+                      catalog: categories,
+                      selected: category,
+                      subcategory: subcategory,
+                      onSelect: filter,
+                      onLogin: onLogin,
+                    ),
+                    const SizedBox(height: 28),
+                    if (root != null)
+                      const Text(
+                        '선택한 카테고리의 상품은 준비 중입니다.',
+                        style: TextStyle(color: faded),
+                      )
+                    else ...[
+                      const Text(
+                        '샘플 의류',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        '상품 목록은 준비 중이며, 아래는 체험용 샘플입니다.',
+                        style: TextStyle(color: faded),
+                      ),
+                      const SizedBox(height: 16),
+                      if (store.catalog.isEmpty)
+                        const Text(
+                          '표시할 의류가 없습니다.',
+                          style: TextStyle(color: faded),
+                        )
+                      else
+                        GarmentGrid(items: store.catalog, store: store),
+                    ],
                   ],
-                ],
-                SizedBox(height: wide ? 20 : 24),
-                if (items.isEmpty)
-                  const Text(
-                    '이 카테고리에는 아직 등록된 의류가 없습니다.',
-                    style: TextStyle(color: faded),
-                  )
-                else
-                  GarmentGrid(items: items, store: store),
-              ],
+                ),
+              ),
             ),
-          ),
-        ),
-      ],
+          ],
+        );
+      },
     );
   }
 }

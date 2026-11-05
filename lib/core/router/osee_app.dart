@@ -1,3 +1,6 @@
+import '../../features/categories/category_api.dart';
+import '../../features/categories/category_catalog.dart';
+
 import 'package:beandoche_osee_frontend/core/providers/osee_store.dart';
 import 'package:beandoche_osee_frontend/core/theme/osee_theme.dart';
 import 'package:beandoche_osee_frontend/core/widgets/osee_header.dart';
@@ -20,9 +23,15 @@ import '../../features/profile/screens/withdrawal_complete_page.dart';
 import 'dart:async';
 
 class OseeApp extends StatefulWidget {
-  const OseeApp({super.key, this.initialStore, this.initialAuth});
+  const OseeApp({
+    super.key,
+    this.initialStore,
+    this.initialAuth,
+    this.categoryApi,
+  });
   final OseeStore? initialStore;
   final AuthController? initialAuth;
+  final CategoryApi? categoryApi;
   @override
   State<OseeApp> createState() => _OseeAppState();
 }
@@ -88,6 +97,7 @@ class _OseeAppState extends State<OseeApp> {
             }
             return _OseeWorkspace(
               initialStore: widget.initialStore,
+              categoryApi: widget.categoryApi,
               onLogin: () => setState(() => loginRequested = true),
             );
           }
@@ -123,6 +133,7 @@ class _OseeAppState extends State<OseeApp> {
           }
           return _OseeWorkspace(
             initialStore: widget.initialStore,
+            categoryApi: widget.categoryApi,
             onLogin: () => setState(() => loginRequested = true),
           );
         },
@@ -132,9 +143,14 @@ class _OseeAppState extends State<OseeApp> {
 }
 
 class _OseeWorkspace extends StatefulWidget {
-  const _OseeWorkspace({this.initialStore, required this.onLogin});
+  const _OseeWorkspace({
+    this.initialStore,
+    required this.onLogin,
+    this.categoryApi,
+  });
   final OseeStore? initialStore;
   final VoidCallback onLogin;
+  final CategoryApi? categoryApi;
 
   @override
   State<_OseeWorkspace> createState() => _OseeWorkspaceState();
@@ -146,9 +162,19 @@ class _OseeWorkspaceState extends State<_OseeWorkspace> {
       ? store.initialize()
       : Future.value();
   int page = 0;
-  String category = 'bottom';
-  String? subcategory = 'Pants';
+  String category = 'all';
+  String? subcategory;
   bool clothesMenuOpen = false;
+  CategoryCatalog? _categories;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _categories ??= CategoryCatalog(
+      auth: AuthScope.of(context),
+      api: widget.categoryApi,
+    );
+  }
 
   void open(int index) {
     if (index >= 2 && !AuthScope.of(context).isAuthenticated) {
@@ -207,6 +233,8 @@ class _OseeWorkspaceState extends State<_OseeWorkspace> {
                         category: category,
                         subcategory: subcategory,
                         filter: filter,
+                        categories: _categories!,
+                        onLogin: widget.onLogin,
                       ),
                       2 => FittingPage(store: store, open: open),
                       3 => WardrobePage(store: store, open: open),
@@ -222,6 +250,13 @@ class _OseeWorkspaceState extends State<_OseeWorkspace> {
                       top: 0,
                       child: ClothesHoverMenu(
                         onSelect: filter,
+                        catalog: _categories!,
+                        selected: category,
+                        subcategory: subcategory,
+                        onLogin: () {
+                          setState(() => clothesMenuOpen = false);
+                          widget.onLogin();
+                        },
                         onExit: () => setState(() => clothesMenuOpen = false),
                       ),
                     ),
@@ -265,6 +300,7 @@ class _OseeWorkspaceState extends State<_OseeWorkspace> {
 
   @override
   void dispose() {
+    _categories?.dispose();
     if (widget.initialStore == null) store.dispose();
     super.dispose();
   }
