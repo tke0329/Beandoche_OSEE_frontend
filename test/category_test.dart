@@ -1,3 +1,7 @@
+import 'package:flutter/gestures.dart';
+import 'package:beandoche_osee_frontend/core/router/osee_app.dart';
+import 'package:beandoche_osee_frontend/core/providers/osee_store.dart';
+
 import 'dart:async';
 import 'dart:convert';
 
@@ -53,6 +57,45 @@ AuthController makeAuth() => AuthController(
 );
 
 void main() {
+  testWidgets('t10 데스크톱에서는 CLOTHES hover에 전체 분류와 하위 목록을 펼친다', (tester) async {
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final auth = makeAuth();
+    await auth.loginWithGoogle('test');
+    final store = OseeStore();
+    final api = CategoryApi(
+      client: MockClient(
+        (_) async => utf8Response(jsonEncode(treeJson()), 200),
+      ),
+    );
+    await tester.pumpWidget(
+      OseeApp(initialAuth: auth, initialStore: store, categoryApi: api),
+    );
+    await tester.pumpAndSettle();
+    final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    await mouse.addPointer(location: Offset.zero);
+    await mouse.moveTo(tester.getCenter(find.text('CLOTHES')));
+    await tester.pumpAndSettle();
+    expect(find.text('상의'), findsOneWidget);
+    expect(find.text('아우터'), findsOneWidget);
+    expect(find.text('긴소매 티셔츠'), findsOneWidget);
+    expect(find.text('후드 집업'), findsOneWidget);
+    expect(find.byType(ChoiceChip), findsNothing);
+    await tester.tap(find.text('후드 집업'));
+    await tester.pumpAndSettle();
+    expect(find.text('선택한 카테고리의 상품은 준비 중입니다.'), findsOneWidget);
+    expect(find.text('상의'), findsNothing);
+    expect(find.text('후드 집업'), findsOneWidget);
+    expect(find.byType(ChoiceChip), findsNothing);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+    await mouse.removePointer();
+    auth.dispose();
+    store.dispose();
+  });
+
   test('t1 인증 헤더와 서버의 계층 및 순서를 보존한다', () async {
     final api = CategoryApi(
       client: MockClient((request) async {

@@ -13,12 +13,14 @@ class CategoryPanel extends StatefulWidget {
     required this.subcategory,
     required this.onSelect,
     required this.onLogin,
+    this.menu = false,
   });
   final CategoryCatalog catalog;
   final String selected;
   final String? subcategory;
   final void Function(String, [String?]) onSelect;
   final VoidCallback onLogin;
+  final bool menu;
 
   @override
   State<CategoryPanel> createState() => _CategoryPanelState();
@@ -75,6 +77,54 @@ class _CategoryPanelState extends State<CategoryPanel> {
       }
       if (catalog.categories.isEmpty) {
         return const Text('표시할 카테고리가 없습니다.');
+      }
+      if (widget.menu) {
+        return Wrap(
+          spacing: 28,
+          runSpacing: 20,
+          crossAxisAlignment: WrapCrossAlignment.start,
+          children: [
+            SizedBox(
+              width: 80,
+              child: TextButton(
+                onPressed: () => widget.onSelect('all'),
+                child: const Text('전체'),
+              ),
+            ),
+            for (final root in catalog.categories)
+              SizedBox(
+                width: 200,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    TextButton(
+                      onPressed: () => widget.onSelect(root.code),
+                      child: Text(
+                        root.name,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    for (final child in root.descendants)
+                      TextButton(
+                        onPressed: () => widget.onSelect(root.code, child.code),
+                        child: Text(
+                          child.name,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: widget.subcategory == child.code
+                                ? FontWeight.w700
+                                : FontWeight.w400,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+          ],
+        );
       }
       final selected = catalog.categories
           .where((c) => c.code == widget.selected)

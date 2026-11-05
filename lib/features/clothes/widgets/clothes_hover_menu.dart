@@ -38,6 +38,7 @@ class ClothesHoverMenu extends StatelessWidget {
               constraints: const BoxConstraints(maxWidth: 1120),
               child: CategoryPanel(
                 catalog: catalog,
+                menu: true,
                 selected: selected,
                 subcategory: subcategory,
                 onSelect: onSelect,

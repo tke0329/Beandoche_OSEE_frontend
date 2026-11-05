@@ -61,13 +61,14 @@ class ClothesPage extends StatelessWidget {
                         ),
                       ),
                     const SizedBox(height: 20),
-                    CategoryPanel(
-                      catalog: categories,
-                      selected: category,
-                      subcategory: subcategory,
-                      onSelect: filter,
-                      onLogin: onLogin,
-                    ),
+                    if (!wide)
+                      CategoryPanel(
+                        catalog: categories,
+                        selected: category,
+                        subcategory: subcategory,
+                        onSelect: filter,
+                        onLogin: onLogin,
+                      ),
                     const SizedBox(height: 28),
                     if (root != null)
                       const Text(
