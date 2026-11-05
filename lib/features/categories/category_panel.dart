@@ -40,7 +40,7 @@ class _CategoryPanelState extends State<CategoryPanel> {
   ButtonStyle get _menuButtonStyle => TextButton.styleFrom(
     alignment: Alignment.centerLeft,
     padding: const EdgeInsets.symmetric(vertical: 4),
-    minimumSize: const Size(0, 32),
+    minimumSize: const Size(0, 40),
     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
   );
 

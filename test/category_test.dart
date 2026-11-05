@@ -75,7 +75,12 @@ void main() {
       OseeApp(initialAuth: auth, initialStore: store, categoryApi: api),
     );
     await tester.pumpAndSettle();
-    expect(tester.getTopLeft(find.text('CLOTHES')).dx, closeTo(330, 2));
+    expect(
+      (tester.getTopLeft(find.text('CLOTHES')).dx +
+              tester.getBottomRight(find.text('OUTFITS')).dx) /
+          2,
+      closeTo(640, 2),
+    );
     final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
     await mouse.addPointer(location: Offset.zero);
     await mouse.moveTo(tester.getCenter(find.text('CLOTHES')));

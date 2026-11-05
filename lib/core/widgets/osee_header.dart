@@ -51,42 +51,49 @@ class OseeHeader extends StatelessWidget {
                     Align(alignment: Alignment.centerLeft, child: logo),
                     Center(
                       child: SizedBox(
-                        width: 620,
-                        child: Row(
-                          children: [
-                            for (var index = 1; index <= 4; index++) ...[
-                              if (index > 1) const SizedBox(width: 54),
-                              MouseRegion(
-                                onEnter: (_) => index == 1
-                                    ? onClothesHover()
-                                    : onOtherHover(),
-                                child: InkWell(
-                                  onTap: () => onNavigate(index),
-                                  child: Text(
-                                    const [
-                                      'HOME',
-                                      'CLOTHES',
-                                      'FITTING ROOM',
-                                      'WARDROBE',
-                                      'OUTFITS',
-                                    ][index],
-                                    style: TextStyle(
-                                      fontFamily: 'Inter',
-                                      fontSize: 11.5,
-                                      height: 1.5,
-                                      letterSpacing: .23,
-                                      fontWeight: activePage == index
-                                          ? FontWeight.w700
-                                          : FontWeight.w600,
-                                      color: activePage == index
-                                          ? const Color(0xff141414)
-                                          : const Color(0xffc3c7ce),
+                        width: (MediaQuery.sizeOf(context).width - 320).clamp(
+                          0.0,
+                          1000.0,
+                        ),
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              for (var index = 1; index <= 4; index++) ...[
+                                if (index > 1) const SizedBox(width: 54),
+                                MouseRegion(
+                                  onEnter: (_) => index == 1
+                                      ? onClothesHover()
+                                      : onOtherHover(),
+                                  child: InkWell(
+                                    onTap: () => onNavigate(index),
+                                    child: Text(
+                                      const [
+                                        'HOME',
+                                        'CLOTHES',
+                                        'FITTING ROOM',
+                                        'WARDROBE',
+                                        'OUTFITS',
+                                      ][index],
+                                      style: TextStyle(
+                                        fontFamily: 'Inter',
+                                        fontSize: 25,
+                                        height: 1.5,
+                                        letterSpacing: .23,
+                                        fontWeight: activePage == index
+                                            ? FontWeight.w700
+                                            : FontWeight.w600,
+                                        color: activePage == index
+                                            ? const Color(0xff141414)
+                                            : const Color(0xffc3c7ce),
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
+                              ],
                             ],
-                          ],
+                          ),
                         ),
                       ),
                     ),
