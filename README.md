@@ -9,6 +9,16 @@
 4. 백엔드 저장소에서 PostgreSQL과 Spring을 실행한다. 기본 API 주소는 `http://localhost:8080`이다.
 5. 프론트 저장소에서 실행한다.
 
+macOS / Linux:
+
+```bash
+./scripts/run-web.sh
+```
+
+`.env`를 우선 사용하며, 기존 `.env.json`도 지원한다. 서버 준비가 끝나면 브라우저에서 `http://localhost:5173`을 직접 연다. 웹 서버 방식으로 실행한다.
+
+Windows PowerShell:
+
 ```powershell
 .\scripts\run-web.ps1
 ```
