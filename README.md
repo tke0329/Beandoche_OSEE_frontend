@@ -4,7 +4,7 @@
 
 1. `flutter pub get`을 실행한다.
    Windows에서 심볼릭 링크 권한 안내가 나오면 Windows 설정의 개발자 모드를 활성화한 뒤 다시 실행한다. 데스크톱 플러그인 링크 권한과 웹 로그인 오류는 별개다.
-2. `config/development.example.json`을 프로젝트 루트의 `.env.json`으로 복사한다.
+2. 프로젝트 루트의 `.env.example`을 `.env`로 복사한다 (`Copy-Item .env.example .env`).
 3. `GOOGLE_OAUTH_CLIENT_ID`에 백엔드와 동일한 **웹 OAuth Client ID**를 설정한다. Client Secret은 넣지 않는다.
 4. 백엔드 저장소에서 PostgreSQL과 Spring을 실행한다. 기본 API 주소는 `http://localhost:8080`이다.
 5. 프론트 저장소에서 실행한다.
@@ -16,7 +16,7 @@
 직접 실행할 경우:
 
 ```powershell
-flutter run -d web-server --web-hostname localhost --web-port 5173 --dart-define-from-file=.env.json
+flutter run -d web-server --web-hostname localhost --web-port 5173 --dart-define-from-file=.env
 ```
 
 서버가 준비되면 평소 사용하는 브라우저에서 `http://localhost:5173`을 연다. 로그인 유지 확인은 같은 브라우저 프로필로 진행한다. `flutter run -d chrome`의 디버그 Chrome은 임시 프로필과 프로젝트 캐시를 사용하므로 일반 브라우저의 쿠키와 별개이며, 종료 방식에 따라 복원이 달라질 수 있다. 시크릿 모드나 종료 시 쿠키 삭제 설정에서는 로그인 유지가 보장되지 않는다.
@@ -27,7 +27,7 @@ flutter run -d web-server --web-hostname localhost --web-port 5173 --dart-define
 
 Google Cloud의 승인된 JavaScript 원본에는 `http://localhost`와 `http://localhost:5173`을 등록한다. 웹 공식 버튼에서 ID Token을 받는 흐름이므로 백엔드 Google callback URI는 사용하지 않는다.
 
-`.env.json`은 Git에서 제외한다. Client ID와 API 주소는 공개 빌드 설정이며, 비밀키나 Refresh Token을 빌드 설정에 넣지 않는다. 종료는 실행 터미널에서 `q` 또는 `Ctrl+C`를 사용한다.
+`.env`는 JSON이 아닌 `KEY=VALUE` 형식이며 Git에서 제외한다. `.env.example`만 공유한다. Flutter의 `--dart-define-from-file=.env`로 기존 `String.fromEnvironment`에 주입하므로 별도 dotenv 패키지나 런타임 파일 로딩은 필요 없다. Client ID와 API 주소는 공개 빌드 설정이며, 비밀키나 Refresh Token을 빌드 설정에 넣지 않는다. 종료는 실행 터미널에서 `q` 또는 `Ctrl+C`를 사용한다.
 
 현재 인증 상태는 `AuthController`(ChangeNotifier)와 `AuthScope`로 공유한다. 웹은 HttpOnly 쿠키를 이용해 초기 진입 시 세션을 복원하고 Access Token 만료 전에 회전한다. 최대 유지 시간은 최초 로그인부터 48시간이며 재발급으로 늘어나지 않는다. Refresh Token 원문은 Dart·localStorage에 저장하지 않는다. 로그아웃은 서버 토큰을 무효화하고 쿠키와 화면 상태를 정리한다. 모바일 네이티브 OAuth·세션 저장 방식은 별도 작업이다.
 
@@ -46,7 +46,7 @@ BE API: `POST /api/auth/web/google`, `POST /api/auth/web/session`, `POST /api/au
 ```powershell
 flutter analyze
 flutter test
-flutter build web --dart-define-from-file=.env.json
+flutter build web --dart-define-from-file=.env
 ```
 
 웹 Google 로그인은 공식 [Google Identity Services JavaScript API](https://developers.google.com/identity/gsi/web/reference/js-reference)를 Dart JS interop으로 호출한다. SDK를 한 번 초기화하고 버튼과 탈퇴 연결 해제에서 공유한다. `use_fedcm_for_button=true`로 지원 Chrome에서 브라우저 중재 방식의 로그인 버튼을 사용하며 `auto_select`와 `button_auto_select`는 꺼 두어 계정 선택 없이 자동 로그인하지 않는다. 브라우저 미지원·사용자 설정에 따라 기존 팝업으로 대체될 수 있으므로 외부 SDK 경고 제거를 모든 환경에서 보장하지 않는다. ID Token 검증과 서비스 세션 발급은 기존 BE API에서 수행한다.
@@ -59,7 +59,7 @@ A new Flutter project.
 
 - 백엔드의 로컬 `.env`에 `KAKAO_OAUTH_REST_API_KEY`, `KAKAO_OAUTH_CLIENT_SECRET`을 설정한다. 프론트에 키를 복사하지 않는다.
 - 카카오 로그인 활성화 후 Redirect URI를 `http://localhost:8080/api/auth/social/kakao/callback`으로 등록한다.
-- 프론트는 기존 `.env.json`의 `OSEE_API_BASE_URL`로 팝업을 연다. 기본 주소는 `http://localhost:8080`이다.
+- 프론트는 `.env`의 `OSEE_API_BASE_URL`로 팝업을 연다. 기본 주소는 `http://localhost:8080`이다.
 - 배포에서는 백엔드 `OSEE_FRONTEND_ORIGIN`을 정확한 프론트 원본으로 지정하고 HTTPS를 사용한다. localhost와 127.0.0.1을 혼용하지 않는다.
 - 카카오로 계속하기 → 카카오 인증 팝업 → 서버 검증 → 홈 순서다. 팝업 차단 시 브라우저에서 허용한다.
 - state는 브라우저에 바인딩된 5분 일회성 값이며 서버 재시작 시 무효화된다. 다중 서버 배포 전에는 공유 저장소로 전환해야 한다.
