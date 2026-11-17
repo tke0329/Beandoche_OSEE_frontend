@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/osee_theme.dart';
-import '../../../core/widgets/avatar_stage.dart';
+import '../../../core/widgets/avatar_viewer.dart';
 import '../../clothes/widgets/catalog_garment_image.dart';
 import '../fitting_catalog.dart';
 import '../widgets/garment_controls.dart';
@@ -30,11 +30,16 @@ class _FittingPageState extends State<FittingPage> {
     listenable: widget.catalog,
     builder: (context, _) {
       final catalog = widget.catalog;
+      final wide = MediaQuery.sizeOf(context).width >= 1050;
+      final stage = _AvatarStage(height: wide ? 640 : 440);
+
       if (catalog.items.isEmpty) {
-        return Center(
+        return SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 40, 20, 60),
           child: Column(
-            mainAxisSize: MainAxisSize.min,
             children: [
+              stage,
+              const SizedBox(height: 20),
               const Text('담은 의류가 없습니다.'),
               TextButton(
                 onPressed: () => widget.open(1),
@@ -44,78 +49,14 @@ class _FittingPageState extends State<FittingPage> {
           ),
         );
       }
-      final wide = MediaQuery.sizeOf(context).width >= 1050;
-      final thumbs = SizedBox(
-        height: wide ? 620 : 160,
-        child: ListView(
-          scrollDirection: wide ? Axis.vertical : Axis.horizontal,
-          children: [
-            for (final item in catalog.items)
-              SizedBox(
-                width: 124,
-                height: 156,
-                child: Padding(
-                  padding: const EdgeInsets.only(right: 12, bottom: 12),
-                  child: Column(
-                    children: [
-                      Expanded(
-                        child: Stack(
-                          children: [
-                            Positioned.fill(
-                              child: Semantics(
-                                selected: catalog.activeId == item.id,
-                                child: OutlinedButton(
-                                  style: OutlinedButton.styleFrom(
-                                    padding: EdgeInsets.zero,
-                                    side: BorderSide(
-                                      color: catalog.activeId == item.id
-                                          ? point
-                                          : line,
-                                      width: 2,
-                                    ),
-                                  ),
-                                  onPressed: () => catalog.select(item.id),
-                                  child: Tooltip(
-                                    message: '${item.name} 선택',
-                                    child: SizedBox.expand(
-                                      child: CatalogGarmentImage(
-                                        url: catalog.imageUrl(
-                                          item.thumbnailUrl,
-                                        ),
-                                        name: item.name,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            Positioned(
-                              top: 0,
-                              right: 0,
-                              child: IconButton.filledTonal(
-                                tooltip: '${item.name} 제거',
-                                onPressed: () => catalog.remove(item.id),
-                                icon: const Icon(Icons.close, size: 16),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Text(
-                        item.name,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
+
+      final thumbs = _GarmentRail(catalog: catalog, vertical: wide);
+      final panel = catalog.loading
+          ? const Padding(
+              padding: EdgeInsets.only(top: 80),
+              child: Center(
+                child: CircularProgressIndicator(semanticsLabel: '상품 상세 조회 중'),
               ),
-          ],
-        ),
-      );
-      final controls = catalog.loading
-          ? const Center(
-              child: CircularProgressIndicator(semanticsLabel: '상품 상세 조회 중'),
             )
           : catalog.error != null
           ? Column(
@@ -128,41 +69,47 @@ class _FittingPageState extends State<FittingPage> {
                 ),
               ],
             )
-          : GarmentControls(catalog: catalog);
-      final stage = Column(
-        children: [
-          const Text(
-            '아바타 예시 · 실제 착용 결과가 아닙니다.',
-            style: TextStyle(color: faded),
-          ),
-          AvatarStage(height: wide ? 580 : 360),
-          const Text('3D 의류 모델 미제공', style: TextStyle(color: faded)),
-        ],
-      );
+          : FittingPanel(catalog: catalog);
+
       return SingleChildScrollView(
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1170),
+            constraints: const BoxConstraints(maxWidth: 1360),
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 32, 20, 60),
+              padding: EdgeInsets.fromLTRB(
+                wide ? 48 : 20,
+                40,
+                wide ? 48 : 20,
+                60,
+              ),
               child: wide
                   ? Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        SizedBox(width: 124, child: thumbs),
-                        const SizedBox(width: 24),
+                        Padding(
+                          padding: const EdgeInsets.only(top: 72),
+                          child: SizedBox(width: 128, child: thumbs),
+                        ),
+                        const SizedBox(width: 48),
                         Expanded(child: stage),
-                        const SizedBox(width: 24),
-                        SizedBox(width: 410, child: controls),
+                        const SizedBox(width: 64),
+                        SizedBox(
+                          width: 560,
+                          child: Padding(
+                            padding: const EdgeInsets.only(top: 48),
+                            child: panel,
+                          ),
+                        ),
                       ],
                     )
                   : Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        thumbs,
+                        SizedBox(height: 140, child: thumbs),
+                        const SizedBox(height: 16),
                         stage,
                         const SizedBox(height: 24),
-                        controls,
+                        panel,
                       ],
                     ),
             ),
@@ -170,5 +117,149 @@ class _FittingPageState extends State<FittingPage> {
         ),
       );
     },
+  );
+}
+
+/// The 3D avatar on a soft spotlight column.
+class _AvatarStage extends StatelessWidget {
+  const _AvatarStage({required this.height});
+  final double height;
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    height: height,
+    child: Stack(
+      alignment: Alignment.center,
+      children: [
+        Positioned(
+          top: 0,
+          bottom: height * 0.12,
+          child: Container(
+            width: height * 0.62,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Color(0x00ffffff), Colors.white, Colors.white],
+                stops: [0, .35, 1],
+              ),
+            ),
+          ),
+        ),
+        Positioned.fill(child: AvatarViewer(height: height)),
+      ],
+    ),
+  );
+}
+
+/// Garments in the fitting room: a vertical rail on wide screens, horizontal otherwise.
+class _GarmentRail extends StatelessWidget {
+  const _GarmentRail({required this.catalog, required this.vertical});
+  final FittingCatalog catalog;
+  final bool vertical;
+
+  @override
+  Widget build(BuildContext context) {
+    final tiles = [
+      for (final item in catalog.items)
+        _GarmentTile(
+          name: item.name,
+          imageUrl: catalog.imageUrl(item.thumbnailUrl),
+          selected: catalog.activeId == item.id,
+          onSelect: () => catalog.select(item.id),
+          onRemove: () => catalog.remove(item.id),
+        ),
+    ];
+    return vertical
+        ? Column(
+            children: [
+              for (final tile in tiles)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 20),
+                  child: tile,
+                ),
+            ],
+          )
+        : ListView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.only(top: 8, right: 8),
+            children: [
+              for (final tile in tiles)
+                Padding(padding: const EdgeInsets.only(right: 16), child: tile),
+            ],
+          );
+  }
+}
+
+class _GarmentTile extends StatelessWidget {
+  const _GarmentTile({
+    required this.name,
+    required this.imageUrl,
+    required this.selected,
+    required this.onSelect,
+    required this.onRemove,
+  });
+  final String name;
+  final String? imageUrl;
+  final bool selected;
+  final VoidCallback onSelect;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    width: 124,
+    height: 124,
+    child: Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Positioned.fill(
+          child: Semantics(
+            button: true,
+            selected: selected,
+            label: '$name 선택',
+            child: Material(
+              color: imageBackground,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(6),
+                side: BorderSide(
+                  color: selected ? OseePalette.primary300 : Colors.transparent,
+                  width: 2,
+                ),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: InkWell(
+                onTap: onSelect,
+                child: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Tooltip(
+                    message: name,
+                    child: CatalogGarmentImage(url: imageUrl, name: name),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+        Positioned(
+          top: -8,
+          right: -8,
+          child: Tooltip(
+            message: '$name 제거',
+            child: Material(
+              color: Colors.white,
+              shape: const CircleBorder(side: BorderSide(color: line)),
+              child: InkWell(
+                customBorder: const CircleBorder(),
+                onTap: onRemove,
+                child: const SizedBox.square(
+                  dimension: 20,
+                  child: Icon(Icons.close, size: 12, color: faded),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    ),
   );
 }

@@ -1,0 +1,59 @@
+{
+  "avatar": "avatar.glb",
+  "outfits": [
+    {
+      "id": "hoodie",
+      "label": "후드티",
+      "file": "outfits/hoodie.glb",
+      "cover": "_cover_hoodie"
+    },
+    {
+      "id": "hoodie_black",
+      "label": "워시드 블랙 후드",
+      "file": "outfits/hoodie_black.glb",
+      "cover": "_cover_hoodie_black"
+    },
+    {
+      "id": "knit",
+      "label": "케이블 니트",
+      "file": "outfits/knit.glb",
+      "cover": "_cover_knit"
+    },
+    {
+      "id": "leather",
+      "label": "가죽 재킷",
+      "file": "outfits/leather.glb",
+      "cover": "_cover_leather"
+    },
+    {
+      "id": "overshirt",
+      "label": "오버셔츠",
+      "file": "outfits/overshirt.glb",
+      "cover": "_cover_overshirt"
+    },
+    {
+      "id": "polo",
+      "label": "카라 티셔츠",
+      "file": "outfits/polo.glb",
+      "cover": "_cover_polo"
+    },
+    {
+      "id": "puffer",
+      "label": "숏패딩",
+      "file": "outfits/puffer.glb",
+      "cover": "_cover_puffer"
+    },
+    {
+      "id": "sleeveless",
+      "label": "민소매",
+      "file": "outfits/sleeveless.glb",
+      "cover": "_cover_sleeveless"
+    },
+    {
+      "id": "tshirt",
+      "label": "반팔 티셔츠",
+      "file": "outfits/tshirt.glb",
+      "cover": "_cover_tshirt"
+    }
+  ]
+}

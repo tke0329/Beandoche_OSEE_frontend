@@ -28,6 +28,9 @@ class FittingCatalog extends ChangeNotifier {
   final GarmentApi _api;
   final List<CatalogGarment> _items = [];
   final Map<int, (int?, int?)> _choices = {};
+  // Personalization: per size, measurement definition -> mm. Kept in memory only.
+  final Map<int, Map<int, num>> _fitDraft = {};
+  final Map<int, Map<int, num>> _fitSaved = {};
   int? _activeId;
   GarmentDetails? _detail;
   GarmentSelection? _selection;
@@ -61,6 +64,41 @@ class FittingCatalog extends ChangeNotifier {
   GarmentVariant? get selectedVariant => _detail?.options.variants
       .where((variant) => variant.id == selectedVariantId)
       .firstOrNull;
+
+  /// The personalized value for [measurement] at the selected size
+  /// (unsaved edit, then saved edit, then the brand's measurement).
+  num fitValue(SizeMeasurement measurement) {
+    final size = selectedSizeId;
+    return _fitDraft[size]?[measurement.definitionId] ??
+        _fitSaved[size]?[measurement.definitionId] ??
+        measurement.valueMm;
+  }
+
+  bool get fitDirty => _fitDraft[selectedSizeId]?.isNotEmpty ?? false;
+
+  void adjustFit(int definitionId, num mm) {
+    final size = selectedSizeId;
+    if (_disposed || size == null) return;
+    (_fitDraft[size] ??= {})[definitionId] = mm;
+    notifyListeners();
+  }
+
+  /// Back to the brand's measurements for the selected size (still needs saving).
+  void resetFit() {
+    final size = selectedSizeId;
+    final measurements = _selection?.measurements;
+    if (_disposed || size == null || measurements == null) return;
+    _fitDraft[size] = {for (final m in measurements) m.definitionId: m.valueMm};
+    notifyListeners();
+  }
+
+  void saveFit() {
+    final size = selectedSizeId;
+    if (_disposed || size == null) return;
+    final draft = _fitDraft.remove(size);
+    if (draft != null) (_fitSaved[size] ??= {}).addAll(draft);
+    notifyListeners();
+  }
 
   void toggle(CatalogGarment item) {
     if (_disposed || needsLogin) return;
