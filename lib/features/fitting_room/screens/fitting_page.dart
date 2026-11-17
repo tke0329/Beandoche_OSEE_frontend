@@ -1,231 +1,174 @@
-import 'package:beandoche_osee_frontend/core/providers/osee_store.dart';
-import 'package:beandoche_osee_frontend/core/theme/osee_theme.dart';
-import 'package:beandoche_osee_frontend/core/widgets/avatar_stage.dart';
-import 'package:beandoche_osee_frontend/features/fitting_room/widgets/garment_controls.dart';
-import 'package:beandoche_osee_frontend/features/outfits/widgets/outfit_dialog.dart';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/osee_theme.dart';
+import '../../../core/widgets/avatar_stage.dart';
+import '../../clothes/widgets/catalog_garment_image.dart';
+import '../fitting_catalog.dart';
+import '../widgets/garment_controls.dart';
+
 class FittingPage extends StatefulWidget {
-  const FittingPage({super.key, required this.store, required this.open});
-  final OseeStore store;
+  const FittingPage({super.key, required this.catalog, required this.open});
+  final FittingCatalog catalog;
   final ValueChanged<int> open;
   @override
   State<FittingPage> createState() => _FittingPageState();
 }
 
 class _FittingPageState extends State<FittingPage> {
-  bool personalize = false;
   @override
-  Widget build(BuildContext context) {
-    final store = widget.store;
-    final garment = store.item(store.activeId);
-    final wide = MediaQuery.sizeOf(context).width >= 1050;
-    final thumbs = store.fittingIds.isEmpty
-        ? TextButton(
-            onPressed: () => widget.open(1),
-            child: const Text('선택한 의류가 없습니다. CLOTHES에서 추가하세요.'),
-          )
-        : SizedBox(
-            height: wide ? 620 : 116,
-            child: ListView(
-              scrollDirection: wide ? Axis.vertical : Axis.horizontal,
-              children: [
-                for (final id in store.fittingIds)
-                  SizedBox(
-                    width: 124,
-                    height: wide ? 128 : 112,
-                    child: Padding(
-                      padding: const EdgeInsets.only(right: 12, bottom: 18),
-                      child: Stack(
-                        children: [
-                          Positioned.fill(
-                            child: InkWell(
-                              onTap: () => store.select(id),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: OseePalette.tertiary50,
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                    color: id == store.activeId
-                                        ? point
-                                        : Colors.transparent,
-                                    width: 2,
-                                  ),
-                                ),
-                                child: Image.asset(
-                                  store.item(id)!.image,
-                                  fit: BoxFit.contain,
-                                ),
-                              ),
-                            ),
-                          ),
-                          Positioned(
-                            right: 0,
-                            top: 0,
-                            child: InkWell(
-                              onTap: () => store.toggleFitting(id),
-                              child: Container(
-                                width: 23,
-                                height: 23,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: background,
-                                  border: Border.all(
-                                    color: OseePalette.secondary100,
-                                  ),
-                                ),
-                                child: const Icon(
-                                  Icons.close,
-                                  size: 14,
-                                  color: ink,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          );
-    final controls = garment == null
-        ? const Text('의류를 선택하면 설정을 변경할 수 있습니다.', style: TextStyle(color: faded))
-        : Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(widget.catalog.loadActive());
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => ListenableBuilder(
+    listenable: widget.catalog,
+    builder: (context, _) {
+      final catalog = widget.catalog;
+      if (catalog.items.isEmpty) {
+        return Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      garment.name,
-                      style: const TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                  PopupMenuButton<String>(
-                    tooltip: '저장 메뉴',
-                    icon: const Icon(
-                      Icons.bookmark_border,
-                      color: OseePalette.primary700,
-                      size: 27,
-                    ),
-                    onSelected: (value) {
-                      if (value == 'wardrobe') {
-                        store.toggleWardrobe(garment.id);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              store.wardrobe.contains(garment.id)
-                                  ? '옷장에 저장했습니다'
-                                  : '옷장에서 삭제했습니다',
-                            ),
-                          ),
-                        );
-                      } else {
-                        outfitDialog(context, store);
-                      }
-                    },
-                    itemBuilder: (_) => const [
-                      PopupMenuItem(value: 'wardrobe', child: Text('내 옷장에 저장')),
-                      PopupMenuItem(value: 'outfit', child: Text('착장 저장')),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 32),
-              Container(
-                height: 54,
-                decoration: BoxDecoration(
-                  color: OseePalette.primary100,
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                child: Row(
-                  children: [
-                    for (final entry in const [
-                      (false, 'Style'),
-                      (true, 'Personalization'),
-                    ])
-                      Expanded(
-                        child: InkWell(
-                          onTap: () => setState(() => personalize = entry.$1),
-                          child: Container(
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              color: personalize == entry.$1
-                                  ? OseePalette.primary100
-                                  : Colors.transparent,
-                              borderRadius: BorderRadius.circular(18),
-                            ),
-                            child: Text(
-                              entry.$2,
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: personalize == entry.$1
-                                    ? ink
-                                    : OseePalette.tertiary200,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 17),
-              GarmentControls(
-                item: garment,
-                store: store,
-                personalize: personalize,
+              const Text('담은 의류가 없습니다.'),
+              TextButton(
+                onPressed: () => widget.open(1),
+                child: const Text('CLOTHES에서 의류 담기'),
               ),
             ],
-          );
-    return SingleChildScrollView(
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1170),
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(
-              wide ? 0 : 20,
-              wide ? 42 : 20,
-              wide ? 0 : 20,
-              60,
-            ),
-            child: wide
-                ? Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+          ),
+        );
+      }
+      final wide = MediaQuery.sizeOf(context).width >= 1050;
+      final thumbs = SizedBox(
+        height: wide ? 620 : 160,
+        child: ListView(
+          scrollDirection: wide ? Axis.vertical : Axis.horizontal,
+          children: [
+            for (final item in catalog.items)
+              SizedBox(
+                width: 124,
+                height: 156,
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 12, bottom: 12),
+                  child: Column(
                     children: [
-                      SizedBox(
-                        width: 112,
-                        child: Padding(
-                          padding: const EdgeInsets.only(top: 36),
-                          child: thumbs,
+                      Expanded(
+                        child: Stack(
+                          children: [
+                            Positioned.fill(
+                              child: Semantics(
+                                selected: catalog.activeId == item.id,
+                                child: OutlinedButton(
+                                  style: OutlinedButton.styleFrom(
+                                    padding: EdgeInsets.zero,
+                                    side: BorderSide(
+                                      color: catalog.activeId == item.id
+                                          ? point
+                                          : line,
+                                      width: 2,
+                                    ),
+                                  ),
+                                  onPressed: () => catalog.select(item.id),
+                                  child: Tooltip(
+                                    message: '${item.name} 선택',
+                                    child: SizedBox.expand(
+                                      child: CatalogGarmentImage(
+                                        url: catalog.imageUrl(
+                                          item.thumbnailUrl,
+                                        ),
+                                        name: item.name,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Positioned(
+                              top: 0,
+                              right: 0,
+                              child: IconButton.filledTonal(
+                                tooltip: '${item.name} 제거',
+                                onPressed: () => catalog.remove(item.id),
+                                icon: const Icon(Icons.close, size: 16),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(width: 35),
-                      const Expanded(child: AvatarStage()),
-                      const SizedBox(width: 35),
-                      Transform.translate(
-                        offset: const Offset(20, 0),
-                        child: SizedBox(width: 534, child: controls),
+                      Text(
+                        item.name,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
-                  )
-                : Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      thumbs,
-                      const AvatarStage(),
-                      const SizedBox(height: 28),
-                      controls,
-                    ],
                   ),
+                ),
+              ),
+          ],
+        ),
+      );
+      final controls = catalog.loading
+          ? const Center(
+              child: CircularProgressIndicator(semanticsLabel: '상품 상세 조회 중'),
+            )
+          : catalog.error != null
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(catalog.error!),
+                TextButton(
+                  onPressed: catalog.retry,
+                  child: const Text('상품 다시 시도'),
+                ),
+              ],
+            )
+          : GarmentControls(catalog: catalog);
+      final stage = Column(
+        children: [
+          const Text(
+            '아바타 예시 · 실제 착용 결과가 아닙니다.',
+            style: TextStyle(color: faded),
+          ),
+          AvatarStage(height: wide ? 580 : 360),
+          const Text('3D 의류 모델 미제공', style: TextStyle(color: faded)),
+        ],
+      );
+      return SingleChildScrollView(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1170),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 32, 20, 60),
+              child: wide
+                  ? Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(width: 124, child: thumbs),
+                        const SizedBox(width: 24),
+                        Expanded(child: stage),
+                        const SizedBox(width: 24),
+                        SizedBox(width: 410, child: controls),
+                      ],
+                    )
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        thumbs,
+                        stage,
+                        const SizedBox(height: 24),
+                        controls,
+                      ],
+                    ),
+            ),
           ),
         ),
-      ),
-    );
-  }
+      );
+    },
+  );
 }

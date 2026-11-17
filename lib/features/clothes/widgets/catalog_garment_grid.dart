@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/osee_theme.dart';
 import '../models/catalog_garment.dart';
+import '../../fitting_room/fitting_catalog.dart';
+import 'catalog_garment_image.dart';
 
 class CatalogGarmentGrid extends StatelessWidget {
   const CatalogGarmentGrid({
@@ -35,43 +37,31 @@ class CatalogGarmentGrid extends StatelessWidget {
         itemBuilder: (context, index) {
           final item = items[index];
           final url = imageUrl(item.thumbnailUrl);
-          Widget fallback() => const Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.image_not_supported_outlined, color: faded),
-                SizedBox(height: 6),
-                Text('이미지 없음', style: TextStyle(color: faded, fontSize: 12)),
-              ],
-            ),
-          );
+          final fitting = FittingScope.maybeOf(context);
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: Container(
-                  width: double.infinity,
-                  color: imageBackground,
-                  child: url == null
-                      ? fallback()
-                      : Image.network(
-                          url,
-                          fit: BoxFit.contain,
-                          semanticLabel: '${item.name} 이미지',
-                          errorBuilder: (context, error, stack) => fallback(),
-                          loadingBuilder: (context, child, progress) =>
-                              progress == null
-                              ? child
-                              : const Center(
-                                  child: SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  ),
-                                ),
+                child: Stack(
+                  children: [
+                    Positioned.fill(
+                      child: CatalogGarmentImage(url: url, name: item.name),
+                    ),
+                    if (fitting != null)
+                      Positioned(
+                        top: 6,
+                        right: 6,
+                        child: IconButton.filledTonal(
+                          tooltip: fitting.contains(item.id)
+                              ? '${item.name} 담기 취소'
+                              : '${item.name} 피팅룸에 담기',
+                          onPressed: () => fitting.toggle(item),
+                          icon: Icon(
+                            fitting.contains(item.id) ? Icons.check : Icons.add,
+                          ),
                         ),
+                      ),
+                  ],
                 ),
               ),
               const SizedBox(height: 8),

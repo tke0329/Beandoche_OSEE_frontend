@@ -30,7 +30,7 @@ Map<String, Object> garmentPageJson({
   'totalPages': (total / size).ceil(),
 };
 
-http.Response garmentResponse(Map<String, Object> value) => http.Response(
+http.Response garmentResponse(Map<String, Object?> value) => http.Response(
   jsonEncode(value),
   200,
   headers: {'content-type': 'application/json; charset=utf-8'},
