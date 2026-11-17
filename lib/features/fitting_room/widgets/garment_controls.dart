@@ -1,310 +1,208 @@
-import 'package:beandoche_osee_frontend/core/providers/osee_store.dart';
-import 'package:beandoche_osee_frontend/core/theme/osee_theme.dart';
-import 'package:beandoche_osee_frontend/features/clothes/models/garment.dart';
-
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/osee_theme.dart';
+import '../../clothes/models/garment_options.dart';
+import '../fitting_catalog.dart';
+
 class GarmentControls extends StatelessWidget {
-  const GarmentControls({
-    super.key,
-    required this.item,
-    required this.store,
-    required this.personalize,
-  });
-  final Garment item;
-  final OseeStore store;
-  final bool personalize;
+  const GarmentControls({super.key, required this.catalog});
+  final FittingCatalog catalog;
 
   @override
   Widget build(BuildContext context) {
-    final setting = store.settings[item.id]!;
+    final detail = catalog.detail;
+    if (detail == null) return const SizedBox.shrink();
+    final options = detail.options;
+    final variant = catalog.selectedVariant;
+    final selection = catalog.selection;
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Text(
+          detail.garment.name,
+          style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 24),
         Container(
           width: double.infinity,
-          padding: EdgeInsets.fromLTRB(
-            personalize ? 38 : 50,
-            personalize ? 24 : 42,
-            personalize ? 38 : 36,
-            personalize ? 30 : 49,
-          ),
+          padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
             color: OseePalette.primary100,
             borderRadius: BorderRadius.circular(20),
-            boxShadow: const [
-              BoxShadow(
-                color: OseePalette.shadowMedium,
-                blurRadius: 3,
-                offset: Offset(0, 3),
-              ),
-            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (!personalize) ...[
-                const Text(
-                  'COLOR',
-                  style: TextStyle(fontSize: 16, color: OseePalette.primary900),
-                ),
-                const SizedBox(height: 16),
+              const Text('COLOR'),
+              const SizedBox(height: 12),
+              if (options.variants.isEmpty)
+                const Text('선택 가능한 색상이 없습니다.')
+              else
                 Wrap(
-                  spacing: 6,
+                  spacing: 8,
+                  runSpacing: 8,
                   children: [
-                    for (final color in item.colors)
-                      Tooltip(
-                        message: color['name'] as String,
-                        child: InkWell(
-                          onTap: () =>
-                              store.color(item.id, color['id'] as String),
-                          child: Container(
-                            width: 29,
-                            height: 29,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: Color(
-                                int.parse(
-                                  'ff${(color['hex'] as String).substring(1)}',
-                                  radix: 16,
+                    for (final color in options.variants)
+                      ChoiceChip(
+                        label: Text(color.name),
+                        selected: catalog.selectedVariantId == color.id,
+                        avatar: color.hex == null
+                            ? null
+                            : CircleAvatar(
+                                backgroundColor: Color(
+                                  int.parse(
+                                    'ff${color.hex!.substring(1)}',
+                                    radix: 16,
+                                  ),
                                 ),
                               ),
-                              border: Border.all(
-                                color: setting.colorId == color['id']
-                                    ? point
-                                    : Colors.transparent,
-                              ),
-                              boxShadow: setting.colorId == color['id']
-                                  ? const [
-                                      BoxShadow(
-                                        color: OseePalette.shadowStrong,
-                                        blurRadius: 2,
-                                      ),
-                                    ]
-                                  : null,
-                            ),
-                          ),
-                        ),
+                        onSelected: (_) => catalog.chooseVariant(color.id),
                       ),
                   ],
                 ),
-                const SizedBox(height: 22),
-                const Text(
-                  'SIZE',
-                  style: TextStyle(fontSize: 16, color: OseePalette.primary900),
-                ),
-                const SizedBox(height: 9),
-                _SizeButtons(item: item, store: store),
-              ] else ...[
-                Row(
+              const SizedBox(height: 24),
+              const Text('SIZE'),
+              const SizedBox(height: 12),
+              if (variant == null || variant.sizes.isEmpty)
+                const Text('판매 사이즈 정보가 없습니다.')
+              else
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
                   children: [
-                    Expanded(
-                      child: _SizeButtons(item: item, store: store),
-                    ),
-                    TextButton.icon(
-                      onPressed: () => store.reset(item.id),
-                      icon: const Icon(Icons.refresh, size: 17),
-                      label: const Text('기본값'),
-                      style: TextButton.styleFrom(foregroundColor: faded),
-                    ),
+                    for (final size in variant.sizes)
+                      ChoiceChip(
+                        label: Text(
+                          size.available ? size.label : '${size.label} (선택 불가)',
+                        ),
+                        selected: catalog.selectedSizeId == size.id,
+                        onSelected: size.available
+                            ? (_) => catalog.chooseSize(size.id)
+                            : null,
+                      ),
                   ],
                 ),
-                const SizedBox(height: 20),
-                for (final field in item.fields)
-                  _MeasureRow(item: item, field: field, store: store),
-              ],
             ],
           ),
         ),
-        if (personalize) ...[
-          const SizedBox(height: 18),
-          SizedBox(
-            width: double.infinity,
-            height: 46,
-            child: FilledButton(
-              style: FilledButton.styleFrom(
-                backgroundColor: OseePalette.secondary600,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              onPressed: () => ScaffoldMessenger.of(context)
-                  .showSnackBar(const SnackBar(content: Text('설정이 적용되었습니다'))),
-              child: const Text('저장', style: TextStyle(fontSize: 16)),
-            ),
+        const SizedBox(height: 16),
+        if (catalog.selecting)
+          const LinearProgressIndicator(semanticsLabel: '선택한 사이즈 정보 조회 중'),
+        if (catalog.selectionError != null) ...[
+          Text(catalog.selectionError!),
+          TextButton(
+            onPressed: catalog.retrySelection,
+            child: const Text('옵션 다시 시도'),
           ),
-        ] else ...[
-          const SizedBox(height: 20),
-          ExpansionTile(
-            minTileHeight: 72,
-            tilePadding: EdgeInsets.zero,
-            childrenPadding: EdgeInsets.zero,
-            title: const Text(
-              '세부 정보',
-              style: TextStyle(fontSize: 16, color: OseePalette.primary900),
-            ),
-            children: [
-              for (final detail in item.details)
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Text(detail),
-                  ),
-                ),
-            ],
-          ),
-          const Divider(height: 1, color: line),
-          const SizedBox(height: 12),
-          ExpansionTile(
-            minTileHeight: 84,
-            tilePadding: EdgeInsets.zero,
-            title: const Text(
-              '사이즈 정보',
-              style: TextStyle(fontSize: 16, color: OseePalette.primary900),
-            ),
-            children: [
-              for (final size in item.sizes)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 9),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      '$size  ·  ${item.fields.map((field) => '${field['label']} ${item.measuresFor(size)[field['key']]}cm').join('  /  ')}',
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          const Divider(height: 1, color: line),
+          TextButton(onPressed: catalog.retry, child: const Text('상품 정보 새로고침')),
         ],
-      ],
-    );
-  }
-}
-
-class _SizeButtons extends StatelessWidget {
-  const _SizeButtons({required this.item, required this.store});
-  final Garment item;
-  final OseeStore store;
-  @override
-  Widget build(BuildContext context) => Wrap(
-    spacing: 7,
-    runSpacing: 7,
-    children: [
-      for (final size in item.sizes)
-        InkWell(
-          onTap: () => store.size(item.id, size),
-          child: Container(
-            width: 46,
-            height: 28,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: OseePalette.primary50,
-              border: Border.all(
-                color: store.settings[item.id]!.size == size
-                    ? point
-                    : Colors.transparent,
-              ),
-              borderRadius: BorderRadius.circular(5),
-            ),
-            child: Text(
-              size,
-              style: const TextStyle(
-                fontSize: 13,
-                color: OseePalette.primary900,
-              ),
-            ),
-          ),
-        ),
-    ],
-  );
-}
-
-class _MeasureRow extends StatelessWidget {
-  const _MeasureRow({
-    required this.item,
-    required this.field,
-    required this.store,
-  });
-  final Garment item;
-  final Map<String, dynamic> field;
-  final OseeStore store;
-  @override
-  Widget build(BuildContext context) {
-    final value = store.settings[item.id]!.measures[field['key']]!;
-    final min = (field['min'] as num).toDouble();
-    final max = (field['max'] as num).toDouble();
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Container(
-        padding: const EdgeInsets.only(left: 12),
-        decoration: const BoxDecoration(
-          border: Border(
-            left: BorderSide(color: OseePalette.secondary200, width: 2),
-          ),
-        ),
-        child: Column(
+        ExpansionTile(
+          title: const Text('세부 정보'),
+          tilePadding: EdgeInsets.zero,
+          childrenPadding: const EdgeInsets.only(bottom: 16),
           children: [
-            Row(
-              children: [
-                Text(
-                  field['label'] as String,
-                  style: const TextStyle(fontSize: 12),
-                ),
-                InkWell(
-                  onTap: () => showDialog<void>(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: Text(field['label'] as String),
-                      content: Text(field['help'] as String),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text('닫기'),
-                        ),
-                      ],
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(detail.description),
+                  const SizedBox(height: 12),
+                  const Text('소재 및 혼용률'),
+                  if (options.materialStatus == 'UNKNOWN')
+                    const Text('소재·혼용률 미확인', style: TextStyle(color: faded)),
+                  for (final material in options.materials)
+                    Text(
+                      '${material.name} ${formatNumber(material.percentage)}%',
                     ),
-                  ),
-                  child: const Icon(Icons.help_outline, size: 11),
-                ),
-                const Spacer(),
-                Text(
-                  '$value',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                const Text('cm', style: TextStyle(fontSize: 12, color: faded)),
-              ],
-            ),
-            SizedBox(
-              height: 17,
-              child: SliderTheme(
-                data: SliderTheme.of(context).copyWith(
-                  trackHeight: 1,
-                  thumbShape: const RoundSliderThumbShape(
-                    enabledThumbRadius: 6,
-                  ),
-                  overlayShape: SliderComponentShape.noOverlay,
-                  activeTrackColor: OseePalette.secondary200,
-                  inactiveTrackColor: OseePalette.secondary200,
-                  thumbColor: OseePalette.primary200,
-                ),
-                child: Slider(
-                  value: value.clamp(min, max),
-                  min: min,
-                  max: max,
-                  divisions: ((max - min) * 2).round(),
-                  onChanged: (newValue) =>
-                      store.measure(item.id, field['key'] as String, newValue),
-                ),
+                ],
               ),
             ),
           ],
         ),
-      ),
+        const Divider(height: 1),
+        ExpansionTile(
+          title: const Text('사이즈 정보'),
+          tilePadding: EdgeInsets.zero,
+          childrenPadding: const EdgeInsets.only(bottom: 16),
+          children: [
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (catalog.selectedSizeId == null)
+                    const Text('사이즈를 선택하면 실측을 확인할 수 있습니다.')
+                  else if (selection != null) ...[
+                    Text(switch (selection.validationStatus) {
+                      'VALID' => '실측 검증 완료',
+                      'INVALID' => '실측 검증 실패',
+                      _ => '실측 검증 불가',
+                    }, style: const TextStyle(fontWeight: FontWeight.w600)),
+                    for (final issue in selection.issues)
+                      Text(
+                        '${_issueName(options.rules, issue.measurementCode)}${issue.message}',
+                      ),
+                    if (selection.measurements.isEmpty)
+                      const Text('등록된 실측이 없습니다.'),
+                    for (final measurement in selection.measurements) ...[
+                      const SizedBox(height: 12),
+                      Text(
+                        '${measurement.name} · ${measurement.displayValue}',
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      Text(
+                        _basisLabel(measurement.basis),
+                        style: const TextStyle(color: faded),
+                      ),
+                      Text('출처: ${_sourceLabel(measurement.source)}'),
+                      Text(
+                        '측정일: ${measurement.measuredAt.toLocal().toIso8601String().split('T').first}',
+                      ),
+                      if (options.rules
+                              .where(
+                                (rule) => rule.id == measurement.definitionId,
+                              )
+                              .firstOrNull
+                          case final rule?)
+                        Text('측정 방법: ${rule.description}'),
+                    ],
+                  ],
+                  if (options.rules.isEmpty)
+                    const Text('카테고리 측정 항목이 설정되지 않았습니다.'),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const Divider(height: 1),
+        const SizedBox(height: 16),
+        const Text('3D 모델 미제공', style: TextStyle(color: faded)),
+        const Text(
+          '실측 검증 상태와 3D 피팅 지원 여부는 별도입니다.',
+          style: TextStyle(color: faded, fontSize: 12),
+        ),
+      ],
     );
   }
+
+  String _issueName(List<MeasurementRule> rules, String? code) {
+    final name = rules.where((rule) => rule.code == code).firstOrNull?.name;
+    return name == null ? '' : '$name: ';
+  }
+
+  String _basisLabel(String basis) => switch (basis) {
+    'FLAT_WIDTH' => '단면 너비',
+    'CIRCUMFERENCE' => '둘레',
+    'LENGTH' => '길이',
+    'WEIGHT' => '무게',
+    _ => basis,
+  };
+  String _sourceLabel(String source) => switch (source) {
+    'BRAND_PROVIDED' => '브랜드 제공',
+    'DIRECT_MEASUREMENT' => '직접 측정',
+    'USER_PROVIDED' => '사용자 제공',
+    'ESTIMATED' => '추정값',
+    _ => source,
+  };
 }

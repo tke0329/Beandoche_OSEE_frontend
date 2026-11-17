@@ -1,3 +1,6 @@
+import '../../features/fitting_room/fitting_catalog.dart';
+import '../../features/clothes/garment_api.dart';
+import '../../features/clothes/garment_catalog.dart';
 import '../../features/categories/category_api.dart';
 import '../../features/categories/category_catalog.dart';
 
@@ -28,10 +31,14 @@ class OseeApp extends StatefulWidget {
     this.initialStore,
     this.initialAuth,
     this.categoryApi,
+    this.garmentApi,
+    this.fittingApi,
   });
   final OseeStore? initialStore;
   final AuthController? initialAuth;
   final CategoryApi? categoryApi;
+  final GarmentApi? garmentApi;
+  final GarmentApi? fittingApi;
   @override
   State<OseeApp> createState() => _OseeAppState();
 }
@@ -98,6 +105,8 @@ class _OseeAppState extends State<OseeApp> {
             return _OseeWorkspace(
               initialStore: widget.initialStore,
               categoryApi: widget.categoryApi,
+              garmentApi: widget.garmentApi,
+              fittingApi: widget.fittingApi,
               onLogin: () => setState(() => loginRequested = true),
             );
           }
@@ -134,6 +143,8 @@ class _OseeAppState extends State<OseeApp> {
           return _OseeWorkspace(
             initialStore: widget.initialStore,
             categoryApi: widget.categoryApi,
+            garmentApi: widget.garmentApi,
+            fittingApi: widget.fittingApi,
             onLogin: () => setState(() => loginRequested = true),
           );
         },
@@ -147,10 +158,14 @@ class _OseeWorkspace extends StatefulWidget {
     this.initialStore,
     required this.onLogin,
     this.categoryApi,
+    this.garmentApi,
+    this.fittingApi,
   });
   final OseeStore? initialStore;
   final VoidCallback onLogin;
   final CategoryApi? categoryApi;
+  final GarmentApi? garmentApi;
+  final GarmentApi? fittingApi;
 
   @override
   State<_OseeWorkspace> createState() => _OseeWorkspaceState();
@@ -166,10 +181,20 @@ class _OseeWorkspaceState extends State<_OseeWorkspace> {
   String? subcategory;
   bool clothesMenuOpen = false;
   CategoryCatalog? _categories;
+  GarmentCatalog? _garments;
+  FittingCatalog? _fitting;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _fitting ??= FittingCatalog(
+      auth: AuthScope.of(context),
+      api: widget.fittingApi,
+    );
+    _garments ??= GarmentCatalog(
+      auth: AuthScope.of(context),
+      api: widget.garmentApi,
+    );
     _categories ??= CategoryCatalog(
       auth: AuthScope.of(context),
       api: widget.categoryApi,
@@ -213,84 +238,88 @@ class _OseeWorkspaceState extends State<_OseeWorkspace> {
             final wide = size.maxWidth >= 1050;
             final visiblePage =
                 !AuthScope.of(context).isAuthenticated && page >= 2 ? 0 : page;
-            return Scaffold(
-              appBar: PreferredSize(
-                preferredSize: const Size.fromHeight(64),
-                child: OseeHeader(
-                  activePage: visiblePage,
-                  wide: wide,
-                  onNavigate: open,
-                  onClothesHover: () => setState(() => clothesMenuOpen = true),
-                  onOtherHover: () => setState(() => clothesMenuOpen = false),
-                ),
-              ),
-              body: Stack(
-                children: [
-                  Positioned.fill(
-                    child: switch (visiblePage) {
-                      1 => ClothesPage(
-                        store: store,
-                        category: category,
-                        subcategory: subcategory,
-                        filter: filter,
-                        categories: _categories!,
-                        onLogin: widget.onLogin,
-                      ),
-                      2 => FittingPage(store: store, open: open),
-                      3 => WardrobePage(store: store, open: open),
-                      4 => OutfitsPage(store: store, open: open),
-                      5 => MyPage(onHome: () => open(0)),
-                      _ => HomePage(open: open),
-                    },
+            return FittingScope(
+              controller: _fitting!,
+              child: Scaffold(
+                appBar: PreferredSize(
+                  preferredSize: const Size.fromHeight(64),
+                  child: OseeHeader(
+                    activePage: visiblePage,
+                    wide: wide,
+                    onNavigate: open,
+                    onClothesHover: () =>
+                        setState(() => clothesMenuOpen = true),
+                    onOtherHover: () => setState(() => clothesMenuOpen = false),
                   ),
-                  if (wide && clothesMenuOpen)
-                    Positioned(
-                      left: 0,
-                      right: 0,
-                      top: 0,
-                      child: ClothesHoverMenu(
-                        onSelect: filter,
-                        catalog: _categories!,
-                        selected: category,
-                        subcategory: subcategory,
-                        onLogin: () {
-                          setState(() => clothesMenuOpen = false);
-                          widget.onLogin();
-                        },
-                        onExit: () => setState(() => clothesMenuOpen = false),
+                ),
+                body: Stack(
+                  children: [
+                    Positioned.fill(
+                      child: switch (visiblePage) {
+                        1 => ClothesPage(
+                          garments: _garments!,
+                          category: category,
+                          subcategory: subcategory,
+                          filter: filter,
+                          categories: _categories!,
+                          onLogin: widget.onLogin,
+                        ),
+                        2 => FittingPage(catalog: _fitting!, open: open),
+                        3 => WardrobePage(store: store, open: open),
+                        4 => OutfitsPage(store: store, open: open),
+                        5 => MyPage(onHome: () => open(0)),
+                        _ => HomePage(open: open),
+                      },
+                    ),
+                    if (wide && clothesMenuOpen)
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        top: 0,
+                        child: ClothesHoverMenu(
+                          onSelect: filter,
+                          catalog: _categories!,
+                          selected: category,
+                          subcategory: subcategory,
+                          onLogin: () {
+                            setState(() => clothesMenuOpen = false);
+                            widget.onLogin();
+                          },
+                          onExit: () => setState(() => clothesMenuOpen = false),
+                        ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
+                bottomNavigationBar: wide || visiblePage == 5
+                    ? null
+                    : NavigationBar(
+                        selectedIndex: visiblePage,
+                        onDestinationSelected: open,
+                        height: 70,
+                        destinations: const [
+                          NavigationDestination(
+                            icon: Icon(Icons.home_outlined),
+                            label: 'HOME',
+                          ),
+                          NavigationDestination(
+                            icon: Icon(Icons.checkroom_outlined),
+                            label: 'CLOTHES',
+                          ),
+                          NavigationDestination(
+                            icon: Icon(Icons.accessibility_new_outlined),
+                            label: 'FITTING',
+                          ),
+                          NavigationDestination(
+                            icon: Icon(Icons.bookmark_border),
+                            label: 'WARDROBE',
+                          ),
+                          NavigationDestination(
+                            icon: Icon(Icons.grid_view_outlined),
+                            label: 'OUTFITS',
+                          ),
+                        ],
+                      ),
               ),
-              bottomNavigationBar: wide || visiblePage == 5
-                  ? null
-                  : NavigationBar(
-                      selectedIndex: visiblePage,
-                      onDestinationSelected: open,
-                      height: 70,
-                      destinations: const [
-                        NavigationDestination(
-                          icon: Icon(Icons.home_outlined),
-                          label: 'HOME',
-                        ),
-                        NavigationDestination(
-                          icon: Icon(Icons.checkroom_outlined),
-                          label: 'CLOTHES',
-                        ),
-                        NavigationDestination(
-                          icon: Icon(Icons.accessibility_new_outlined),
-                          label: 'FITTING',
-                        ),
-                        NavigationDestination(
-                          icon: Icon(Icons.bookmark_border),
-                          label: 'WARDROBE',
-                        ),
-                        NavigationDestination(
-                          icon: Icon(Icons.grid_view_outlined),
-                          label: 'OUTFITS',
-                        ),
-                      ],
-                    ),
             );
           },
         ),
@@ -300,6 +329,8 @@ class _OseeWorkspaceState extends State<_OseeWorkspace> {
 
   @override
   void dispose() {
+    _fitting?.dispose();
+    _garments?.dispose();
     _categories?.dispose();
     if (widget.initialStore == null) store.dispose();
     super.dispose();
