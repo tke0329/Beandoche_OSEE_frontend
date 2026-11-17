@@ -98,3 +98,22 @@ A few resources to get you started if this is your first Flutter project:
 For help getting started with Flutter development, view the
 [online documentation](https://docs.flutter.dev/), which offers tutorials,
 samples, guidance on mobile development, and a full API reference.
+
+## 상품 목록 API 연동
+
+- CLOTHES는 인증 후 `GET /api/garments`를 조회한다. 백엔드는 Garment 기본 조회 기능과 `V2611041300` 마이그레이션이 적용된 버전을 실행해야 한다.
+- 선택한 대분류 또는 하위 카테고리를 `categoryCode`로 전달한다. All은 코드를 생략한다. 기본 최신 등록순(`sort=LATEST`), 한 페이지 20개이며 이전/다음 페이지로 이동한다.
+- 로딩, 빈 목록, 안전한 오류 메시지와 재시도, 로그인 경로, 이미지 실패 대체 표시를 제공한다. 카테고리를 바꾸면 첫 페이지로 이동하고, 로그아웃하거나 응답 순서가 뒤바뀐 경우 이전 데이터를 표시하지 않는다.
+- 카드에는 서버가 제공한 상품명·카테고리명·대표 이미지만 표시한다. 브랜드는 1차 범위에서 제외한다. + 담기와 피팅룸 상세·옵션·소재·실측을 서버 API로 연결하며 3D 모델은 미제공 상태를 표시한다.
+- CLOTHES 목록은 기존 샘플 의류를 사용하지 않는다. 기존 피팅룸·옷장·착장 데모 상태는 별도다. 현재 로컬 DB에 상품이 없으면 빈 목록이 정상이다.
+- 검증: `flutter test`, `flutter analyze`, `flutter build web --dart-define-from-file=.env`.
+
+## 서버 상품 담기와 피팅룸
+
+- CLOTHES 카드의 + 버튼은 서버 상품 ID로 의류를 담고, 다시 누르면 취소한다. 별도 상품 상세 페이지로 이동하지 않는다.
+- 피팅룸에서 담은 의류를 선택하면 공통 상세와 `/api/garments/{id}/options`를 조회한다. 색상을 바꾸면 사이즈 선택을 초기화하고, 사용 가능한 사이즈만 선택할 수 있다.
+- 사이즈 선택은 `/api/garments/{id}/selection`을 호출해 실측·검증 오류를 조회한다. 길이는 화면에서만 mm→cm로 변환하고 단면·둘레·길이를 구분해 표시한다. 측정 출처·측정일·측정 방법을 표시한다.
+- 소재·혼용률 미확인, 실측 없음, 카테고리 측정 항목 미설정, 허용 범위 미설정과 3D 모델 미제공을 명시한다. 실측은 조회 전용이고 임의 편집/추정하지 않는다.
+- 담기와 옵션 선택은 현재 로그인 세션의 메모리 상태다. 새로고침 시 초기화하고 로그아웃 시 제거한다. 옷장·착장 서버 저장을 대신하지 않는다. 기존 옷장·착장은 로컬 데모이며 서버 상품 연결은 별도 작업이다.
+- 중앙 아바타는 예시 이미지이며 실제 의류 착용 결과가 아니다. 3D 모델 계약 확정 전 렌더링이나 핏 판정을 수행하지 않는다.
+- 백엔드 `V2611171200`, `V2611171210` 마이그레이션 및 옵션 API가 필요하다.
