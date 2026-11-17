@@ -221,20 +221,42 @@ void main() {
     expect(find.byTooltip('테스트 셔츠 담기 취소'), findsOneWidget);
     await tester.tap(find.text('FITTING ROOM'));
     await tester.pumpAndSettle();
-    expect(find.text('COLOR'), findsOneWidget);
-    expect(find.text('SIZE'), findsOneWidget);
-    final disabled = tester.widget<ChoiceChip>(
-      find.widgetWithText(ChoiceChip, 'XL (선택 불가)'),
+    expect(find.text('Style'), findsOneWidget);
+    expect(find.text('Personalization'), findsOneWidget);
+    final disabled = tester.widget<InkWell>(
+      find.descendant(
+        of: find.byTooltip('XL 선택 불가'),
+        matching: find.byType(InkWell),
+      ),
     );
-    expect(disabled.onSelected, isNull);
-    await tester.tap(find.widgetWithText(ChoiceChip, 'M'));
+    expect(disabled.onTap, isNull);
+    await tester.tap(find.byTooltip('사이즈 M'));
     await tester.pumpAndSettle();
     await tester.ensureVisible(find.text('사이즈 정보'));
     await tester.tap(find.text('사이즈 정보'));
     await tester.pumpAndSettle();
     expect(find.text('가슴단면 · 50 cm'), findsOneWidget);
     expect(find.text('실측 검증 불가'), findsOneWidget);
-    expect(find.text('3D 모델 미제공'), findsOneWidget);
+
+    // Personalization: adjust a measurement, then save
+    await tester.ensureVisible(find.text('Personalization'));
+    await tester.tap(find.text('Personalization'));
+    await tester.pumpAndSettle();
+    expect(find.text('가슴단면'), findsOneWidget);
+    expect(find.text('50'), findsOneWidget);
+    final save = find.widgetWithText(FilledButton, '저장');
+    expect(tester.widget<FilledButton>(save).onPressed, isNull);
+    final slider = find.byType(Slider).first;
+    await tester.ensureVisible(slider);
+    await tester.drag(slider, const Offset(60, 0));
+    await tester.pumpAndSettle();
+    expect(find.text('50'), findsNothing);
+    expect(tester.widget<FilledButton>(save).onPressed, isNotNull);
+    await tester.ensureVisible(save);
+    await tester.tap(save);
+    await tester.pumpAndSettle();
+    expect(find.text('내 핏 설정을 저장했습니다.'), findsOneWidget);
+    expect(tester.widget<FilledButton>(save).onPressed, isNull);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox());
     auth.dispose();
@@ -259,11 +281,41 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('COLOR'), findsOneWidget);
+    expect(find.text('Style'), findsOneWidget);
     expect(tester.takeException(), isNull);
     catalog.remove(7);
     await tester.pumpAndSettle();
     expect(find.text('담은 의류가 없습니다.'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
+    catalog.dispose();
+    auth.dispose();
+  });
+
+  testWidgets('t10 데스크톱 피팅룸은 Style·Personalization 패널을 넘침 없이 표시한다', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1440, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final auth = makeAuth();
+    await auth.loginWithGoogle('test');
+    final catalog = FittingCatalog(auth: auth, api: fittingApi());
+    catalog.toggle(CatalogGarment.fromJson(garmentJson()));
+    await catalog.loadActive();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: FittingPage(catalog: catalog, open: (_) {}),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('사이즈 M'), findsOneWidget);
+    await tester.tap(find.text('Personalization'));
+    await tester.pumpAndSettle();
+    expect(find.text('기본값'), findsOneWidget);
+    expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox());
     catalog.dispose();
     auth.dispose();
