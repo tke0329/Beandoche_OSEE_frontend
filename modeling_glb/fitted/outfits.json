@@ -1,0 +1,11 @@
+{
+  "avatar": "avatar.glb",
+  "outfits": [
+    {
+      "id": "hoodie_black",
+      "label": "워시드 블랙 후드",
+      "file": "outfits/hoodie_black.glb",
+      "cover": "_cover_hoodie_black"
+    }
+  ]
+}
