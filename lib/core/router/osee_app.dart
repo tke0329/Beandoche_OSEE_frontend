@@ -1,3 +1,5 @@
+import '../../features/clothes/garment_api.dart';
+import '../../features/clothes/garment_catalog.dart';
 import '../../features/categories/category_api.dart';
 import '../../features/categories/category_catalog.dart';
 
@@ -28,10 +30,12 @@ class OseeApp extends StatefulWidget {
     this.initialStore,
     this.initialAuth,
     this.categoryApi,
+    this.garmentApi,
   });
   final OseeStore? initialStore;
   final AuthController? initialAuth;
   final CategoryApi? categoryApi;
+  final GarmentApi? garmentApi;
   @override
   State<OseeApp> createState() => _OseeAppState();
 }
@@ -98,6 +102,7 @@ class _OseeAppState extends State<OseeApp> {
             return _OseeWorkspace(
               initialStore: widget.initialStore,
               categoryApi: widget.categoryApi,
+              garmentApi: widget.garmentApi,
               onLogin: () => setState(() => loginRequested = true),
             );
           }
@@ -134,6 +139,7 @@ class _OseeAppState extends State<OseeApp> {
           return _OseeWorkspace(
             initialStore: widget.initialStore,
             categoryApi: widget.categoryApi,
+            garmentApi: widget.garmentApi,
             onLogin: () => setState(() => loginRequested = true),
           );
         },
@@ -147,10 +153,12 @@ class _OseeWorkspace extends StatefulWidget {
     this.initialStore,
     required this.onLogin,
     this.categoryApi,
+    this.garmentApi,
   });
   final OseeStore? initialStore;
   final VoidCallback onLogin;
   final CategoryApi? categoryApi;
+  final GarmentApi? garmentApi;
 
   @override
   State<_OseeWorkspace> createState() => _OseeWorkspaceState();
@@ -166,10 +174,15 @@ class _OseeWorkspaceState extends State<_OseeWorkspace> {
   String? subcategory;
   bool clothesMenuOpen = false;
   CategoryCatalog? _categories;
+  GarmentCatalog? _garments;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _garments ??= GarmentCatalog(
+      auth: AuthScope.of(context),
+      api: widget.garmentApi,
+    );
     _categories ??= CategoryCatalog(
       auth: AuthScope.of(context),
       api: widget.categoryApi,
@@ -229,7 +242,7 @@ class _OseeWorkspaceState extends State<_OseeWorkspace> {
                   Positioned.fill(
                     child: switch (visiblePage) {
                       1 => ClothesPage(
-                        store: store,
+                        garments: _garments!,
                         category: category,
                         subcategory: subcategory,
                         filter: filter,
@@ -300,6 +313,7 @@ class _OseeWorkspaceState extends State<_OseeWorkspace> {
 
   @override
   void dispose() {
+    _garments?.dispose();
     _categories?.dispose();
     if (widget.initialStore == null) store.dispose();
     super.dispose();

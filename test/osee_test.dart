@@ -1,3 +1,5 @@
+import 'garment_fixtures.dart';
+
 import 'package:beandoche_osee_frontend/features/categories/category_api.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/widgets.dart';
@@ -58,6 +60,7 @@ void main() {
       OseeApp(
         initialStore: store,
         initialAuth: auth,
+        garmentApi: emptyGarmentApi(),
         categoryApi: CategoryApi(
           client: MockClient(
             (_) async => utf8Response(jsonEncode(treeJson()), 200),
@@ -72,13 +75,14 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(ClothesPage), findsOneWidget);
-    expect(find.text('denim pants (black)'), findsOneWidget);
+    expect(find.text('등록된 상품이 없습니다.'), findsOneWidget);
+    expect(find.text('denim pants (black)'), findsNothing);
     await tester.tap(find.text('상의'));
     await tester.pumpAndSettle();
     expect(find.text('긴소매 티셔츠'), findsOneWidget);
     await tester.tap(find.text('긴소매 티셔츠'));
     await tester.pumpAndSettle();
-    expect(find.text('선택한 카테고리의 상품은 준비 중입니다.'), findsOneWidget);
+    expect(find.text('선택한 카테고리에 등록된 상품이 없습니다.'), findsOneWidget);
     expect(tester.takeException(), isNull);
 
     await tester.pumpWidget(const SizedBox.shrink());

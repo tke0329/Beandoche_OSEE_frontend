@@ -98,3 +98,12 @@ A few resources to get you started if this is your first Flutter project:
 For help getting started with Flutter development, view the
 [online documentation](https://docs.flutter.dev/), which offers tutorials,
 samples, guidance on mobile development, and a full API reference.
+
+## 상품 목록 API 연동
+
+- CLOTHES는 인증 후 `GET /api/garments`를 조회한다. 백엔드는 Garment 기본 조회 기능과 `V2611041300` 마이그레이션이 적용된 버전을 실행해야 한다.
+- 선택한 대분류 또는 하위 카테고리를 `categoryCode`로 전달한다. All은 코드를 생략한다. 기본 최신 등록순(`sort=LATEST`), 한 페이지 20개이며 이전/다음 페이지로 이동한다.
+- 로딩, 빈 목록, 안전한 오류 메시지와 재시도, 로그인 경로, 이미지 실패 대체 표시를 제공한다. 카테고리를 바꾸면 첫 페이지로 이동하고, 로그아웃하거나 응답 순서가 뒤바뀐 경우 이전 데이터를 표시하지 않는다.
+- 카드에는 서버가 제공한 상품명·카테고리명·대표 이미지만 표시한다. 브랜드는 1차 범위에서 제외하며 상세 화면·색상·사이즈·실측·3D 정보와 피팅 연결은 후속 작업이다.
+- CLOTHES 목록은 기존 샘플 의류를 사용하지 않는다. 기존 피팅룸·옷장·착장 데모 상태는 별도다. 현재 로컬 DB에 상품이 없으면 빈 목록이 정상이다.
+- 검증: `flutter test`, `flutter analyze`, `flutter build web --dart-define-from-file=.env`.

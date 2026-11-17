@@ -1,3 +1,6 @@
+import 'garment_fixtures.dart';
+
+import 'package:beandoche_osee_frontend/features/clothes/garment_catalog.dart';
 import 'package:beandoche_osee_frontend/features/clothes/screens/clothes_page.dart';
 import 'package:flutter/gestures.dart';
 import 'package:beandoche_osee_frontend/core/router/osee_app.dart';
@@ -72,7 +75,12 @@ void main() {
       ),
     );
     await tester.pumpWidget(
-      OseeApp(initialAuth: auth, initialStore: store, categoryApi: api),
+      OseeApp(
+        initialAuth: auth,
+        initialStore: store,
+        categoryApi: api,
+        garmentApi: emptyGarmentApi(),
+      ),
     );
     await tester.pumpAndSettle();
     expect(
@@ -102,7 +110,7 @@ void main() {
     expect(find.byType(ChoiceChip), findsNothing);
     await tester.tap(find.text('후드 집업'));
     await tester.pumpAndSettle();
-    expect(find.text('선택한 카테고리의 상품은 준비 중입니다.'), findsOneWidget);
+    expect(find.text('선택한 카테고리에 등록된 상품이 없습니다.'), findsOneWidget);
     expect(find.text('Top'), findsNothing);
     expect(find.text('/ 후드 집업'), findsOneWidget);
     expect(tester.getTopLeft(find.text('Outerwear')).dx, closeTo(108, 2));
@@ -141,7 +149,7 @@ void main() {
       ),
     );
     await catalog.load();
-    final store = OseeStore();
+    final garments = GarmentCatalog(auth: auth, api: emptyGarmentApi());
     for (final entry in {
       'all': 'All',
       'TOP': 'Top',
@@ -153,7 +161,7 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: ClothesPage(
-              store: store,
+              garments: garments,
               category: entry.key,
               subcategory: null,
               filter: (value, [sub]) {},
@@ -170,9 +178,9 @@ void main() {
       expect(tester.takeException(), isNull);
     }
     await tester.pumpWidget(const SizedBox());
+    garments.dispose();
     catalog.dispose();
     auth.dispose();
-    store.dispose();
   });
 
   testWidgets('t12 아우터 22개를 순서대로 11개씩 두 열로 나누고 선택한다', (tester) async {
