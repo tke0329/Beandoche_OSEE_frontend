@@ -17,6 +17,8 @@ class FittingPage extends StatefulWidget {
 }
 
 class _FittingPageState extends State<FittingPage> {
+  AvatarModel _model = AvatarModel.female;
+
   @override
   void initState() {
     super.initState();
@@ -31,7 +33,11 @@ class _FittingPageState extends State<FittingPage> {
     builder: (context, _) {
       final catalog = widget.catalog;
       final wide = MediaQuery.sizeOf(context).width >= 1050;
-      final stage = _AvatarStage(height: wide ? 640 : 440);
+      final stage = _AvatarStage(
+        height: wide ? 640 : 440,
+        model: _model,
+        onModel: (model) => setState(() => _model = model),
+      );
 
       if (catalog.items.isEmpty) {
         return SingleChildScrollView(
@@ -122,33 +128,58 @@ class _FittingPageState extends State<FittingPage> {
 
 /// The 3D avatar on a soft spotlight column.
 class _AvatarStage extends StatelessWidget {
-  const _AvatarStage({required this.height});
+  const _AvatarStage({
+    required this.height,
+    required this.model,
+    required this.onModel,
+  });
   final double height;
+  final AvatarModel model;
+  final ValueChanged<AvatarModel> onModel;
 
   @override
-  Widget build(BuildContext context) => SizedBox(
-    height: height,
-    child: Stack(
-      alignment: Alignment.center,
-      children: [
-        Positioned(
-          top: 0,
-          bottom: height * 0.12,
-          child: Container(
-            width: height * 0.62,
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Color(0x00ffffff), Colors.white, Colors.white],
-                stops: [0, .35, 1],
+  Widget build(BuildContext context) => Column(
+    children: [
+      SegmentedButton<AvatarModel>(
+        showSelectedIcon: false,
+        style: const ButtonStyle(
+          visualDensity: VisualDensity.compact,
+          textStyle: WidgetStatePropertyAll(TextStyle(fontSize: 13)),
+        ),
+        segments: [
+          for (final m in AvatarModel.values)
+            ButtonSegment(value: m, label: Text(m.label)),
+        ],
+        selected: {model},
+        onSelectionChanged: (selection) => onModel(selection.first),
+      ),
+      SizedBox(
+        height: height,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Positioned(
+              top: 0,
+              bottom: height * 0.12,
+              child: Container(
+                width: height * 0.62,
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Color(0x00ffffff), Colors.white, Colors.white],
+                    stops: [0, .35, 1],
+                  ),
+                ),
               ),
             ),
-          ),
+            Positioned.fill(
+              child: AvatarViewer(height: height, model: model),
+            ),
+          ],
         ),
-        Positioned.fill(child: AvatarViewer(height: height)),
-      ],
-    ),
+      ),
+    ],
   );
 }
 
