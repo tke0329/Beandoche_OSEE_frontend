@@ -65,6 +65,7 @@ flutter:
     - assets/images/
     - assets/data/catalog.json
     - modeling_glb/
+    - modeling_glb/fitted/avatar_woman.glb
     - modeling_glb/fitted/avatar.glb
   fonts:
     - family: Inter

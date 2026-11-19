@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:beandoche_osee_frontend/core/router/osee_app.dart';
 import 'package:beandoche_osee_frontend/core/providers/osee_store.dart';
+import 'package:beandoche_osee_frontend/core/widgets/avatar_viewer.dart';
 import 'package:beandoche_osee_frontend/features/categories/category_api.dart';
 import 'package:beandoche_osee_frontend/features/clothes/garment_api.dart';
 import 'package:beandoche_osee_frontend/features/clothes/models/catalog_garment.dart';
@@ -315,6 +316,39 @@ void main() {
     await tester.tap(find.text('Personalization'));
     await tester.pumpAndSettle();
     expect(find.text('기본값'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+    catalog.dispose();
+    auth.dispose();
+  });
+
+  testWidgets('t11 피팅룸에서 여성·남성 아바타를 토글로 바꾼다', (tester) async {
+    tester.view.physicalSize = const Size(1440, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final auth = makeAuth();
+    await auth.loginWithGoogle('test');
+    final catalog = FittingCatalog(auth: auth, api: fittingApi());
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: FittingPage(catalog: catalog, open: (_) {}),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    SegmentedButton<AvatarModel> toggle() =>
+        tester.widget<SegmentedButton<AvatarModel>>(
+          find.byType(SegmentedButton<AvatarModel>),
+        );
+    expect(toggle().selected, {AvatarModel.female});
+    await tester.tap(find.text('남성'));
+    await tester.pumpAndSettle();
+    expect(toggle().selected, {AvatarModel.male});
+    await tester.tap(find.text('여성'));
+    await tester.pumpAndSettle();
+    expect(toggle().selected, {AvatarModel.female});
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox());
     catalog.dispose();

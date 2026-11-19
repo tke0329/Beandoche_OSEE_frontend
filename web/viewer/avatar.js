@@ -1,10 +1,11 @@
 // Avatar-only 3D viewer, embedded in the Flutter fitting room as an iframe.
 //
-// Loads the shared base avatar (beandoche_osee_modeling/pipeline -> modeling_glb/fitted/avatar.glb),
+// Loads the female base avatar (beandoche_osee_modeling/Modeling_final/rig_woman.py -> modeling_glb/fitted/avatar_woman.glb),
 // eases it from its A-pose rest into a relaxed stance, then keeps a subtle procedural idle
 // (breathing, weight shift, head drift) so it reads as a person standing, not a statue.
 // Query params:
-//   ?src=<url>   avatar GLB (default: Flutter asset modeling_glb/fitted/avatar.glb)
+//   ?model=female|male   base body (default female): Flutter asset modeling_glb/fitted/avatar_woman.glb / avatar.glb
+//   ?src=<url>   avatar GLB, overrides ?model=
 //   ?idle=0      disable the idle motion
 // Posts {type:'osee:avatar-viewer', state:'ready'|'error'} to the parent window.
 import * as THREE from 'three';
@@ -12,7 +13,8 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 const params = new URLSearchParams(location.search);
-const SRC = params.get('src') ?? new URL('../assets/modeling_glb/fitted/avatar.glb', location.href).href;
+const MODELS = { female: 'avatar_woman.glb', male: 'avatar.glb' };
+const SRC = params.get('src') ?? new URL(`../assets/modeling_glb/fitted/${MODELS[params.get('model')] ?? MODELS.female}`, location.href).href;
 const IDLE = params.get('idle') !== '0' && !matchMedia('(prefers-reduced-motion: reduce)').matches;
 const statusEl = document.querySelector('#status');
 const hintEl = document.querySelector('#hint');

@@ -1,5 +1,8 @@
 import 'package:flutter/widgets.dart';
 
 import 'avatar_stage.dart';
+import 'avatar_viewer.dart';
 
-Widget buildAvatarViewer(double height) => AvatarStage(height: height);
+/// Non-web platforms show the static avatar image for both bodies.
+Widget buildAvatarViewer(double height, AvatarModel model) =>
+    AvatarStage(height: height);
