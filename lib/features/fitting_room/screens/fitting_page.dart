@@ -85,6 +85,7 @@ class _FittingPageState extends State<FittingPage> {
                       MaterialPageRoute<void>(
                         builder: (pageContext) => BodySetupPage(
                           onNext: () => Navigator.of(pageContext).pop(),
+                          onSaved: () => Navigator.of(pageContext).pop(),
                         ),
                       ),
                     ),

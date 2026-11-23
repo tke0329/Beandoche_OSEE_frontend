@@ -4,10 +4,12 @@ import 'package:flutter/material.dart';
 
 import '../body_profile.dart';
 import '../body_profile_controller.dart';
+import '../../../core/widgets/avatar_viewer.dart';
 
 class BodySetupPage extends StatefulWidget {
-  const BodySetupPage({super.key, required this.onNext});
+  const BodySetupPage({super.key, required this.onNext, this.onSaved});
   final VoidCallback onNext;
+  final VoidCallback? onSaved;
 
   @override
   State<BodySetupPage> createState() => _BodySetupPageState();
@@ -73,7 +75,9 @@ class _BodySetupPageState extends State<BodySetupPage> {
       for (final field in BodyMeasurement.values)
         field: field.parseInput(_inputs[field]!.text)!,
     });
-    if (await _body!.save(_gender!, measurements) && mounted) widget.onNext();
+    if (await _body!.save(_gender!, measurements) && mounted) {
+      (widget.onSaved ?? widget.onNext)();
+    }
   }
 
   @override
@@ -119,6 +123,15 @@ class _BodySetupPageState extends State<BodySetupPage> {
                     validator: (value) =>
                         value == null ? '기본 모델을 선택해 주세요.' : null,
                   ),
+                  if (_gender != null) ...[
+                    const SizedBox(height: 16),
+                    AvatarViewer(
+                      height: 300,
+                      model: _gender == 'MALE'
+                          ? AvatarModel.male
+                          : AvatarModel.female,
+                    ),
+                  ],
                   for (final field in BodyMeasurement.values) ...[
                     const SizedBox(height: 16),
                     TextFormField(
@@ -161,7 +174,13 @@ class _BodySetupPageState extends State<BodySetupPage> {
                   const SizedBox(height: 20),
                   FilledButton(
                     onPressed: busy || !body.loaded ? null : _save,
-                    child: Text(body.saving ? '저장 중…' : '신체정보 저장'),
+                    child: Text(
+                      body.saving
+                          ? '저장 중…'
+                          : widget.onSaved == null
+                          ? '신체정보 저장'
+                          : '저장하고 피팅룸 보기',
+                    ),
                   ),
                   TextButton(
                     onPressed: busy ? null : widget.onNext,

@@ -51,6 +51,7 @@ class _OseeAppState extends State<OseeApp> {
   final navigator = GlobalKey<NavigatorState>();
   bool previouslyAuthenticated = false;
   bool loginRequested = false;
+  bool openFittingAfterSave = false;
   late final AppLifecycleListener lifecycle;
   late final AuthController auth = widget.initialAuth ?? AuthController();
   late final BodyProfileController bodyProfiles = BodyProfileController(
@@ -74,6 +75,7 @@ class _OseeAppState extends State<OseeApp> {
   void onAuthChanged() {
     if (auth.isAuthenticated) loginRequested = false;
     if (previouslyAuthenticated && !auth.isAuthenticated) {
+      openFittingAfterSave = false;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) navigator.currentState?.popUntil((route) => route.isFirst);
       });
@@ -149,9 +151,16 @@ class _OseeAppState extends State<OseeApp> {
               return ProfileFormPage(auth: auth, initial: true);
             }
             if (auth.showBodyStep) {
-              return BodySetupPage(onNext: auth.finishBodyStep);
+              return BodySetupPage(
+                onNext: auth.finishBodyStep,
+                onSaved: () {
+                  openFittingAfterSave = true;
+                  auth.finishBodyStep();
+                },
+              );
             }
             return _OseeWorkspace(
+              initialPage: openFittingAfterSave ? 2 : 0,
               initialStore: widget.initialStore,
               categoryApi: widget.categoryApi,
               garmentApi: widget.garmentApi,
@@ -167,6 +176,7 @@ class _OseeAppState extends State<OseeApp> {
 
 class _OseeWorkspace extends StatefulWidget {
   const _OseeWorkspace({
+    this.initialPage = 0,
     this.initialStore,
     required this.onLogin,
     this.categoryApi,
@@ -174,6 +184,7 @@ class _OseeWorkspace extends StatefulWidget {
     this.fittingApi,
   });
   final OseeStore? initialStore;
+  final int initialPage;
   final VoidCallback onLogin;
   final CategoryApi? categoryApi;
   final GarmentApi? garmentApi;
@@ -188,7 +199,7 @@ class _OseeWorkspaceState extends State<_OseeWorkspace> {
   late final Future<void> ready = widget.initialStore == null
       ? store.initialize()
       : Future.value();
-  int page = 0;
+  late int page = widget.initialPage;
   String category = 'all';
   String? subcategory;
   bool clothesMenuOpen = false;
@@ -279,7 +290,10 @@ class _OseeWorkspaceState extends State<_OseeWorkspace> {
                         2 => FittingPage(catalog: _fitting!, open: open),
                         3 => WardrobePage(store: store, open: open),
                         4 => OutfitsPage(store: store, open: open),
-                        5 => MyPage(onHome: () => open(0)),
+                        5 => MyPage(
+                          onHome: () => open(0),
+                          onFitting: () => open(2),
+                        ),
                         _ => HomePage(open: open),
                       },
                     ),

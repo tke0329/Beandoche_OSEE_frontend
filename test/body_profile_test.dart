@@ -18,6 +18,9 @@ import 'auth_test.dart' show sessionJson, profileJson, utf8Response;
 import 'category_test.dart' show makeAuth;
 import 'fitting_fixtures.dart' show fittingApi;
 
+import 'package:beandoche_osee_frontend/core/router/osee_app.dart';
+import 'package:beandoche_osee_frontend/core/providers/osee_store.dart';
+
 // Isolated test data, never used as a user's default measurements.
 Map<String, Object?> bodyJson({String gender = 'FEMALE'}) => {
   'gender': gender,
@@ -36,6 +39,119 @@ Map<String, Object?> bodyJson({String gender = 'FEMALE'}) => {
 };
 
 void main() {
+  testWidgets('t9 저장 후 피팅룸으로 이동하고 앱 재진입 시 저장한 모델을 다시 불러온다', (tester) async {
+    tester.view.physicalSize = const Size(1280, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final auth = makeAuth();
+    await auth.loginWithGoogle('test');
+    auth.showBodyStep = true;
+    final store = OseeStore();
+    await tester.runAsync(store.initialize);
+    Map<String, Object?>? saved;
+    var gets = 0;
+    AuthApi api() => AuthApi(
+      client: MockClient((request) async {
+        if (request.method == 'PUT') {
+          saved = jsonDecode(request.body) as Map<String, Object?>;
+        } else {
+          gets++;
+        }
+        return saved == null
+            ? utf8Response('{"code":"BODY_PROFILE_REQUIRED"}', 404)
+            : utf8Response(
+                jsonEncode(bodyJson(gender: saved!['gender']! as String)),
+                200,
+              );
+      }),
+    );
+    await tester.pumpWidget(
+      OseeApp(initialAuth: auth, initialStore: store, bodyProfileApi: api()),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(DropdownButtonFormField<String>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('남성').last);
+    await tester.pumpAndSettle();
+    final values = ['165', '55.125', '85', '65', '90', '50', '75'];
+    for (final entry in BodyMeasurement.values.indexed) {
+      final input = find.byKey(ValueKey(entry.$2.key));
+      await tester.ensureVisible(input);
+      await tester.enterText(input, values[entry.$1]);
+    }
+    await tester.ensureVisible(find.text('저장하고 피팅룸 보기'));
+    await tester.tap(find.text('저장하고 피팅룸 보기'));
+    await tester.pumpAndSettle();
+    expect(saved?['gender'], 'MALE');
+    expect(saved?['heightMm'], 1650);
+    expect(find.byType(FittingPage), findsOneWidget);
+    expect(
+      tester.widget<AvatarViewer>(find.byType(AvatarViewer)).model,
+      AvatarModel.male,
+    );
+    await tester.pumpWidget(const SizedBox());
+    await tester.pumpWidget(
+      OseeApp(initialAuth: auth, initialStore: store, bodyProfileApi: api()),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('FITTING ROOM'));
+    await tester.pumpAndSettle();
+    expect(gets, 2);
+    expect(find.byType(FittingPage), findsOneWidget);
+    expect(
+      tester.widget<AvatarViewer>(find.byType(AvatarViewer)).model,
+      AvatarModel.male,
+    );
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+    auth.dispose();
+    store.dispose();
+  });
+
+  testWidgets('t10 모델 저장 실패 시 피팅룸으로 이동하지 않고 재시도할 수 있다', (tester) async {
+    final auth = makeAuth();
+    await auth.loginWithGoogle('test');
+    final body = BodyProfileController(
+      auth: auth,
+      api: AuthApi(
+        client: MockClient(
+          (request) async => request.method == 'GET'
+              ? utf8Response(jsonEncode(bodyJson()), 200)
+              : utf8Response('{"code":"INTERNAL_ERROR"}', 500),
+        ),
+      ),
+    );
+    var saved = false;
+    await tester.pumpWidget(
+      BodyProfileScope(
+        controller: body,
+        child: MaterialApp(
+          home: BodySetupPage(onNext: () {}, onSaved: () => saved = true),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final button = find.text('저장하고 피팅룸 보기');
+    await tester.ensureVisible(button);
+    await tester.tap(button);
+    await tester.pumpAndSettle();
+    expect(saved, isFalse);
+    expect(body.error, isNotNull);
+    expect(
+      tester
+          .widget<FilledButton>(
+            find.widgetWithText(FilledButton, '저장하고 피팅룸 보기'),
+          )
+          .onPressed,
+      isNotNull,
+    );
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+    body.dispose();
+    auth.dispose();
+  });
+
   testWidgets('t7 계정의 남성 모델을 복원하고 성별 변경을 서버에 저장한다', (tester) async {
     final auth = makeAuth();
     await auth.loginWithGoogle('test');

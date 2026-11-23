@@ -7,8 +7,9 @@ import 'profile_form_page.dart';
 import 'body_setup_page.dart';
 
 class MyPage extends StatelessWidget {
-  const MyPage({super.key, required this.onHome});
+  const MyPage({super.key, required this.onHome, this.onFitting});
   final VoidCallback onHome;
+  final VoidCallback? onFitting;
 
   Future<void> confirmWithdrawal(
     BuildContext context,
@@ -122,6 +123,12 @@ class MyPage extends StatelessWidget {
                           MaterialPageRoute<void>(
                             builder: (context) => BodySetupPage(
                               onNext: () => Navigator.of(context).pop(),
+                              onSaved: onFitting == null
+                                  ? null
+                                  : () {
+                                      Navigator.of(context).pop();
+                                      onFitting!();
+                                    },
                             ),
                           ),
                         ),
