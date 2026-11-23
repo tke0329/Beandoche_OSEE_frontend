@@ -115,7 +115,7 @@ class MyPage extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 12),
-                      const Text('아직 준비 중입니다. 지금은 신체정보를 수집하지 않아요.'),
+                      const Text('신체 치수를 저장하고 피팅룸의 남성·여성 기본 모델을 선택할 수 있어요.'),
                       const SizedBox(height: 16),
                       OutlinedButton(
                         onPressed: () => Navigator.of(context).push(

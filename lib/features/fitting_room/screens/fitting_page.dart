@@ -7,6 +7,8 @@ import '../../../core/widgets/avatar_viewer.dart';
 import '../../clothes/widgets/catalog_garment_image.dart';
 import '../fitting_catalog.dart';
 import '../widgets/garment_controls.dart';
+import '../../profile/body_profile_controller.dart';
+import '../../profile/screens/body_setup_page.dart';
 
 class FittingPage extends StatefulWidget {
   const FittingPage({super.key, required this.catalog, required this.open});
@@ -18,6 +20,31 @@ class FittingPage extends StatefulWidget {
 
 class _FittingPageState extends State<FittingPage> {
   AvatarModel _model = AvatarModel.female;
+  BodyProfileController? _body;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final body = BodyProfileScope.maybeOf(context);
+    if (_body == body) return;
+    _body = body;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && body != null) unawaited(body.load());
+    });
+  }
+
+  Future<void> _selectModel(AvatarModel model) async {
+    final body = _body;
+    final profile = body?.profile;
+    if (profile == null) {
+      setState(() => _model = model);
+      return;
+    }
+    await body!.save(
+      model == AvatarModel.male ? 'MALE' : 'FEMALE',
+      profile.measurements,
+    );
+  }
 
   @override
   void initState() {
@@ -33,10 +60,54 @@ class _FittingPageState extends State<FittingPage> {
     builder: (context, _) {
       final catalog = widget.catalog;
       final wide = MediaQuery.sizeOf(context).width >= 1050;
-      final stage = _AvatarStage(
-        height: wide ? 640 : 440,
-        model: _model,
-        onModel: (model) => setState(() => _model = model),
+      final body = BodyProfileScope.maybeOf(context);
+      final model = switch (body?.profile?.gender) {
+        'MALE' => AvatarModel.male,
+        'FEMALE' => AvatarModel.female,
+        _ => _model,
+      };
+      final stage = Column(
+        children: [
+          if (body != null) ...[
+            if (body.loading || body.saving)
+              const LinearProgressIndicator(semanticsLabel: '신체정보 처리 중'),
+            if (body.error != null) ...[
+              Text(body.error!),
+              TextButton(
+                onPressed: body.loading || body.saving ? null : body.retry,
+                child: const Text('신체정보 다시 시도'),
+              ),
+            ],
+            OutlinedButton(
+              onPressed: body.loading || body.saving
+                  ? null
+                  : () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (pageContext) => BodySetupPage(
+                          onNext: () => Navigator.of(pageContext).pop(),
+                        ),
+                      ),
+                    ),
+              child: Text(body.profile == null ? '신체정보 등록' : '신체정보 수정'),
+            ),
+            if (body.profile != null)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 8),
+                child: Text('계정에 저장한 기본 모델입니다. 치수에 따른 체형 변형은 준비 중입니다.'),
+              ),
+          ],
+          _AvatarStage(
+            height: wide ? 640 : 440,
+            model: model,
+            onModel:
+                body != null &&
+                    (body.loading ||
+                        body.saving ||
+                        (!body.loaded && body.error != null))
+                ? null
+                : (model) => unawaited(_selectModel(model)),
+          ),
+        ],
       );
 
       if (catalog.items.isEmpty) {
@@ -135,7 +206,7 @@ class _AvatarStage extends StatelessWidget {
   });
   final double height;
   final AvatarModel model;
-  final ValueChanged<AvatarModel> onModel;
+  final ValueChanged<AvatarModel>? onModel;
 
   @override
   Widget build(BuildContext context) => Column(
@@ -151,7 +222,9 @@ class _AvatarStage extends StatelessWidget {
             ButtonSegment(value: m, label: Text(m.label)),
         ],
         selected: {model},
-        onSelectionChanged: (selection) => onModel(selection.first),
+        onSelectionChanged: onModel == null
+            ? null
+            : (selection) => onModel!(selection.first),
       ),
       SizedBox(
         height: height,

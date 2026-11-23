@@ -193,7 +193,7 @@ void main() {
   });
 
   testWidgets(
-    't2 incomplete profile requires nickname then shows prepared body step',
+    't2 incomplete profile requires nickname then offers optional body registration',
     (tester) async {
       var completed = false;
       final auth = AuthController(
@@ -217,7 +217,18 @@ void main() {
       final store = OseeStore();
       await tester.runAsync(store.initialize);
       await tester.runAsync(() => auth.loginWithGoogle('test'));
-      await tester.pumpWidget(OseeApp(initialAuth: auth, initialStore: store));
+      await tester.pumpWidget(
+        OseeApp(
+          initialAuth: auth,
+          initialStore: store,
+          bodyProfileApi: AuthApi(
+            client: MockClient(
+              (_) async =>
+                  utf8Response('{"code":"BODY_PROFILE_REQUIRED"}', 404),
+            ),
+          ),
+        ),
+      );
       await tester.pumpAndSettle();
       expect(find.text('프로필 만들기'), findsOneWidget);
       await tester.enterText(find.byType(TextFormField), '테스트회원');
@@ -226,9 +237,10 @@ void main() {
       await tester.ensureVisible(find.text('다음'));
       await tester.tap(find.text('다음'));
       await tester.pumpAndSettle();
-      expect(find.text('아직 준비 중입니다'), findsOneWidget);
+      expect(find.text('나의 신체정보'), findsOneWidget);
       expect(find.text('Before you buy,'), findsNothing);
-      await tester.tap(find.text('다음'));
+      await tester.ensureVisible(find.text('나중에 입력'));
+      await tester.tap(find.text('나중에 입력'));
       await tester.pumpAndSettle();
       expect(find.text('Before you buy,'), findsOneWidget);
       final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);

@@ -22,6 +22,8 @@ import '../../features/profile/screens/mypage.dart';
 import '../../features/profile/screens/profile_form_page.dart';
 import '../../features/profile/screens/body_setup_page.dart';
 import '../../features/profile/screens/withdrawal_complete_page.dart';
+import '../../features/profile/body_profile_controller.dart';
+import '../../features/auth/auth_api.dart';
 
 import 'dart:async';
 
@@ -33,12 +35,14 @@ class OseeApp extends StatefulWidget {
     this.categoryApi,
     this.garmentApi,
     this.fittingApi,
+    this.bodyProfileApi,
   });
   final OseeStore? initialStore;
   final AuthController? initialAuth;
   final CategoryApi? categoryApi;
   final GarmentApi? garmentApi;
   final GarmentApi? fittingApi;
+  final AuthApi? bodyProfileApi;
   @override
   State<OseeApp> createState() => _OseeAppState();
 }
@@ -49,6 +53,10 @@ class _OseeAppState extends State<OseeApp> {
   bool loginRequested = false;
   late final AppLifecycleListener lifecycle;
   late final AuthController auth = widget.initialAuth ?? AuthController();
+  late final BodyProfileController bodyProfiles = BodyProfileController(
+    auth: auth,
+    api: widget.bodyProfileApi,
+  );
 
   @override
   void initState() {
@@ -77,30 +85,71 @@ class _OseeAppState extends State<OseeApp> {
   void dispose() {
     auth.removeListener(onAuthChanged);
     lifecycle.dispose();
+    bodyProfiles.dispose();
     if (widget.initialAuth == null) auth.dispose();
     super.dispose();
   }
 
   @override
-  Widget build(BuildContext context) => AuthScope(
-    controller: auth,
-    child: MaterialApp(
-      navigatorKey: navigator,
-      title: 'OSEE',
-      debugShowCheckedModeBanner: false,
-      theme: oseeTheme,
-      home: ListenableBuilder(
-        listenable: auth,
-        builder: (context, _) {
-          if (!auth.isAuthenticated) {
-            if (auth.withdrawalResult != null) {
-              return WithdrawalCompletePage(auth: auth);
-            }
-            if (loginRequested) {
-              return LoginPage(
-                auth: auth,
-                onHome: () => setState(() => loginRequested = false),
+  Widget build(BuildContext context) => BodyProfileScope(
+    controller: bodyProfiles,
+    child: AuthScope(
+      controller: auth,
+      child: MaterialApp(
+        navigatorKey: navigator,
+        title: 'OSEE',
+        debugShowCheckedModeBanner: false,
+        theme: oseeTheme,
+        home: ListenableBuilder(
+          listenable: auth,
+          builder: (context, _) {
+            if (!auth.isAuthenticated) {
+              if (auth.withdrawalResult != null) {
+                return WithdrawalCompletePage(auth: auth);
+              }
+              if (loginRequested) {
+                return LoginPage(
+                  auth: auth,
+                  onHome: () => setState(() => loginRequested = false),
+                );
+              }
+              return _OseeWorkspace(
+                initialStore: widget.initialStore,
+                categoryApi: widget.categoryApi,
+                garmentApi: widget.garmentApi,
+                fittingApi: widget.fittingApi,
+                onLogin: () => setState(() => loginRequested = true),
               );
+            }
+            if (auth.profile == null) {
+              return Scaffold(
+                body: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (auth.busy)
+                        const CircularProgressIndicator()
+                      else ...[
+                        Text(auth.error ?? '프로필을 확인하지 못했습니다.'),
+                        TextButton(
+                          onPressed: auth.reloadProfile,
+                          child: const Text('다시 시도'),
+                        ),
+                        TextButton(
+                          onPressed: auth.logout,
+                          child: const Text('로그아웃'),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              );
+            }
+            if (!auth.profile!.completed) {
+              return ProfileFormPage(auth: auth, initial: true);
+            }
+            if (auth.showBodyStep) {
+              return BodySetupPage(onNext: auth.finishBodyStep);
             }
             return _OseeWorkspace(
               initialStore: widget.initialStore,
@@ -109,45 +158,8 @@ class _OseeAppState extends State<OseeApp> {
               fittingApi: widget.fittingApi,
               onLogin: () => setState(() => loginRequested = true),
             );
-          }
-          if (auth.profile == null) {
-            return Scaffold(
-              body: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (auth.busy)
-                      const CircularProgressIndicator()
-                    else ...[
-                      Text(auth.error ?? '프로필을 확인하지 못했습니다.'),
-                      TextButton(
-                        onPressed: auth.reloadProfile,
-                        child: const Text('다시 시도'),
-                      ),
-                      TextButton(
-                        onPressed: auth.logout,
-                        child: const Text('로그아웃'),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            );
-          }
-          if (!auth.profile!.completed) {
-            return ProfileFormPage(auth: auth, initial: true);
-          }
-          if (auth.showBodyStep) {
-            return BodySetupPage(onNext: auth.finishBodyStep);
-          }
-          return _OseeWorkspace(
-            initialStore: widget.initialStore,
-            categoryApi: widget.categoryApi,
-            garmentApi: widget.garmentApi,
-            fittingApi: widget.fittingApi,
-            onLogin: () => setState(() => loginRequested = true),
-          );
-        },
+          },
+        ),
       ),
     ),
   );
