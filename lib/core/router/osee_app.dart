@@ -22,6 +22,8 @@ import '../../features/profile/screens/mypage.dart';
 import '../../features/profile/screens/profile_form_page.dart';
 import '../../features/profile/screens/body_setup_page.dart';
 import '../../features/profile/screens/withdrawal_complete_page.dart';
+import '../../features/profile/body_profile_controller.dart';
+import '../../features/auth/auth_api.dart';
 
 import 'dart:async';
 
@@ -33,12 +35,14 @@ class OseeApp extends StatefulWidget {
     this.categoryApi,
     this.garmentApi,
     this.fittingApi,
+    this.bodyProfileApi,
   });
   final OseeStore? initialStore;
   final AuthController? initialAuth;
   final CategoryApi? categoryApi;
   final GarmentApi? garmentApi;
   final GarmentApi? fittingApi;
+  final AuthApi? bodyProfileApi;
   @override
   State<OseeApp> createState() => _OseeAppState();
 }
@@ -47,8 +51,13 @@ class _OseeAppState extends State<OseeApp> {
   final navigator = GlobalKey<NavigatorState>();
   bool previouslyAuthenticated = false;
   bool loginRequested = false;
+  bool openFittingAfterSave = false;
   late final AppLifecycleListener lifecycle;
   late final AuthController auth = widget.initialAuth ?? AuthController();
+  late final BodyProfileController bodyProfiles = BodyProfileController(
+    auth: auth,
+    api: widget.bodyProfileApi,
+  );
 
   @override
   void initState() {
@@ -66,6 +75,7 @@ class _OseeAppState extends State<OseeApp> {
   void onAuthChanged() {
     if (auth.isAuthenticated) loginRequested = false;
     if (previouslyAuthenticated && !auth.isAuthenticated) {
+      openFittingAfterSave = false;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) navigator.currentState?.popUntil((route) => route.isFirst);
       });
@@ -77,77 +87,88 @@ class _OseeAppState extends State<OseeApp> {
   void dispose() {
     auth.removeListener(onAuthChanged);
     lifecycle.dispose();
+    bodyProfiles.dispose();
     if (widget.initialAuth == null) auth.dispose();
     super.dispose();
   }
 
   @override
-  Widget build(BuildContext context) => AuthScope(
-    controller: auth,
-    child: MaterialApp(
-      navigatorKey: navigator,
-      title: 'OSEE',
-      debugShowCheckedModeBanner: false,
-      theme: oseeTheme,
-      home: ListenableBuilder(
-        listenable: auth,
-        builder: (context, _) {
-          if (!auth.isAuthenticated) {
-            if (auth.withdrawalResult != null) {
-              return WithdrawalCompletePage(auth: auth);
+  Widget build(BuildContext context) => BodyProfileScope(
+    controller: bodyProfiles,
+    child: AuthScope(
+      controller: auth,
+      child: MaterialApp(
+        navigatorKey: navigator,
+        title: 'OSEE',
+        debugShowCheckedModeBanner: false,
+        theme: oseeTheme,
+        home: ListenableBuilder(
+          listenable: auth,
+          builder: (context, _) {
+            if (!auth.isAuthenticated) {
+              if (auth.withdrawalResult != null) {
+                return WithdrawalCompletePage(auth: auth);
+              }
+              if (loginRequested) {
+                return LoginPage(
+                  auth: auth,
+                  onHome: () => setState(() => loginRequested = false),
+                );
+              }
+              return _OseeWorkspace(
+                initialStore: widget.initialStore,
+                categoryApi: widget.categoryApi,
+                garmentApi: widget.garmentApi,
+                fittingApi: widget.fittingApi,
+                onLogin: () => setState(() => loginRequested = true),
+              );
             }
-            if (loginRequested) {
-              return LoginPage(
-                auth: auth,
-                onHome: () => setState(() => loginRequested = false),
+            if (auth.profile == null) {
+              return Scaffold(
+                body: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (auth.busy)
+                        const CircularProgressIndicator()
+                      else ...[
+                        Text(auth.error ?? '프로필을 확인하지 못했습니다.'),
+                        TextButton(
+                          onPressed: auth.reloadProfile,
+                          child: const Text('다시 시도'),
+                        ),
+                        TextButton(
+                          onPressed: auth.logout,
+                          child: const Text('로그아웃'),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              );
+            }
+            if (!auth.profile!.completed) {
+              return ProfileFormPage(auth: auth, initial: true);
+            }
+            if (auth.showBodyStep) {
+              return BodySetupPage(
+                onNext: auth.finishBodyStep,
+                onSaved: () {
+                  openFittingAfterSave = true;
+                  auth.finishBodyStep();
+                },
               );
             }
             return _OseeWorkspace(
+              initialPage: openFittingAfterSave ? 2 : 0,
               initialStore: widget.initialStore,
               categoryApi: widget.categoryApi,
               garmentApi: widget.garmentApi,
               fittingApi: widget.fittingApi,
               onLogin: () => setState(() => loginRequested = true),
             );
-          }
-          if (auth.profile == null) {
-            return Scaffold(
-              body: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (auth.busy)
-                      const CircularProgressIndicator()
-                    else ...[
-                      Text(auth.error ?? '프로필을 확인하지 못했습니다.'),
-                      TextButton(
-                        onPressed: auth.reloadProfile,
-                        child: const Text('다시 시도'),
-                      ),
-                      TextButton(
-                        onPressed: auth.logout,
-                        child: const Text('로그아웃'),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            );
-          }
-          if (!auth.profile!.completed) {
-            return ProfileFormPage(auth: auth, initial: true);
-          }
-          if (auth.showBodyStep) {
-            return BodySetupPage(onNext: auth.finishBodyStep);
-          }
-          return _OseeWorkspace(
-            initialStore: widget.initialStore,
-            categoryApi: widget.categoryApi,
-            garmentApi: widget.garmentApi,
-            fittingApi: widget.fittingApi,
-            onLogin: () => setState(() => loginRequested = true),
-          );
-        },
+          },
+        ),
       ),
     ),
   );
@@ -155,6 +176,7 @@ class _OseeAppState extends State<OseeApp> {
 
 class _OseeWorkspace extends StatefulWidget {
   const _OseeWorkspace({
+    this.initialPage = 0,
     this.initialStore,
     required this.onLogin,
     this.categoryApi,
@@ -162,6 +184,7 @@ class _OseeWorkspace extends StatefulWidget {
     this.fittingApi,
   });
   final OseeStore? initialStore;
+  final int initialPage;
   final VoidCallback onLogin;
   final CategoryApi? categoryApi;
   final GarmentApi? garmentApi;
@@ -176,7 +199,7 @@ class _OseeWorkspaceState extends State<_OseeWorkspace> {
   late final Future<void> ready = widget.initialStore == null
       ? store.initialize()
       : Future.value();
-  int page = 0;
+  late int page = widget.initialPage;
   String category = 'all';
   String? subcategory;
   bool clothesMenuOpen = false;
@@ -267,7 +290,10 @@ class _OseeWorkspaceState extends State<_OseeWorkspace> {
                         2 => FittingPage(catalog: _fitting!, open: open),
                         3 => WardrobePage(store: store, open: open),
                         4 => OutfitsPage(store: store, open: open),
-                        5 => MyPage(onHome: () => open(0)),
+                        5 => MyPage(
+                          onHome: () => open(0),
+                          onFitting: () => open(2),
+                        ),
                         _ => HomePage(open: open),
                       },
                     ),

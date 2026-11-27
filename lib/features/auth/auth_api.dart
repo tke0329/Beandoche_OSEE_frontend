@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 
 import '../profile/profile_data.dart';
+import '../profile/body_profile.dart';
 import 'credential_client_stub.dart'
     if (dart.library.js_interop) 'credential_client_web.dart'
     as transport;
@@ -200,6 +201,7 @@ class AuthApi {
     }
     throw AuthFailure(
       switch (code) {
+        'INVALID_BODY_MEASUREMENT' => '신체정보의 입력 형식과 단위를 확인해 주세요.',
         'NICKNAME_ALREADY_EXISTS' => '중복된 닉네임입니다.',
         'INVALID_NICKNAME' => '닉네임은 한글·영문·숫자·밑줄 2~20자로 입력해 주세요.',
         'NICKNAME_NOT_ALLOWED' => '욕설이나 성적인 표현은 닉네임으로 사용할 수 없습니다.',
@@ -281,6 +283,37 @@ class AuthApi {
         await _client.get(
           _uri('/api/users/me'),
           headers: {'Authorization': 'Bearer $accessToken'},
+        ),
+      ),
+    ),
+  );
+
+  Future<BodyProfile?> bodyProfile(String accessToken) => _safe(() async {
+    final response = await _client.get(
+      _uri('/api/users/me/body-profile'),
+      headers: {'Authorization': 'Bearer $accessToken'},
+    );
+    if (response.statusCode == 404) {
+      final body = jsonDecode(utf8.decode(response.bodyBytes));
+      if (body is Map && body['code'] == 'BODY_PROFILE_REQUIRED') return null;
+    }
+    return BodyProfile.fromJson(_read(response));
+  });
+
+  Future<BodyProfile> saveBodyProfile(
+    String accessToken,
+    String gender,
+    BodyMeasurements measurements,
+  ) => _safe(
+    () async => BodyProfile.fromJson(
+      _read(
+        await _client.put(
+          _uri('/api/users/me/body-profile'),
+          headers: {
+            'Authorization': 'Bearer $accessToken',
+            'Content-Type': 'application/json',
+          },
+          body: jsonEncode({'gender': gender, ...measurements.toJson()}),
         ),
       ),
     ),
