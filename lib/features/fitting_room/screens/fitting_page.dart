@@ -8,6 +8,7 @@ import '../../clothes/widgets/catalog_garment_image.dart';
 import '../fitting_catalog.dart';
 import '../widgets/garment_controls.dart';
 import '../../profile/body_profile_controller.dart';
+import '../../profile/body_profile.dart';
 import '../../profile/screens/body_setup_page.dart';
 
 class FittingPage extends StatefulWidget {
@@ -94,12 +95,14 @@ class _FittingPageState extends State<FittingPage> {
             if (body.profile != null)
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 8),
-                child: Text('계정에 저장한 기본 모델입니다. 치수에 따른 체형 변형은 준비 중입니다.'),
+                child: Text('계정에 저장한 기본 모델과 키를 반영합니다. 부위별 체형 변형은 준비 중입니다.'),
               ),
           ],
           _AvatarStage(
             height: wide ? 640 : 440,
             model: model,
+            heightMm: body?.profile?.measurements.values[BodyMeasurement.height]
+                ?.toInt(),
             onModel:
                 body != null &&
                     (body.loading ||
@@ -204,9 +207,11 @@ class _AvatarStage extends StatelessWidget {
     required this.height,
     required this.model,
     required this.onModel,
+    this.heightMm,
   });
   final double height;
   final AvatarModel model;
+  final int? heightMm;
   final ValueChanged<AvatarModel>? onModel;
 
   @override
@@ -248,7 +253,11 @@ class _AvatarStage extends StatelessWidget {
               ),
             ),
             Positioned.fill(
-              child: AvatarViewer(height: height, model: model),
+              child: AvatarViewer(
+                height: height,
+                model: model,
+                heightMm: heightMm,
+              ),
             ),
           ],
         ),

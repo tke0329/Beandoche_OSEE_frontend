@@ -22,9 +22,11 @@ class AvatarViewer extends StatelessWidget {
     super.key,
     required this.height,
     this.model = AvatarModel.female,
+    this.heightMm,
   });
   final double height;
   final AvatarModel model;
+  final int? heightMm;
 
   @override
   Widget build(BuildContext context) => SizedBox(
@@ -32,7 +34,7 @@ class AvatarViewer extends StatelessWidget {
     // a new key rebuilds the iframe, so each body gets a fresh viewer
     child: KeyedSubtree(
       key: ValueKey(model),
-      child: platform.buildAvatarViewer(height, model),
+      child: platform.buildAvatarViewer(height, model, heightMm),
     ),
   );
 }

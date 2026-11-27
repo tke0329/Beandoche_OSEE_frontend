@@ -8,13 +8,18 @@ import 'avatar_viewer.dart';
 import 'avatar_stage.dart';
 
 /// `web/viewer/avatar.html` is a plain file next to index.html, so it resolves against the base href.
-Widget buildAvatarViewer(double height, AvatarModel model) =>
-    _WebAvatarViewer(height: height, model: model);
+Widget buildAvatarViewer(double height, AvatarModel model, int? heightMm) =>
+    _WebAvatarViewer(height: height, model: model, heightMm: heightMm);
 
 class _WebAvatarViewer extends StatefulWidget {
-  const _WebAvatarViewer({required this.height, required this.model});
+  const _WebAvatarViewer({
+    required this.height,
+    required this.model,
+    this.heightMm,
+  });
   final double height;
   final AvatarModel model;
+  final int? heightMm;
 
   @override
   State<_WebAvatarViewer> createState() => _WebAvatarViewerState();
@@ -40,13 +45,31 @@ class _WebAvatarViewerState extends State<_WebAvatarViewer> {
       try {
         final message = event.data.dartify();
         if (message is! Map || message['type'] != 'osee:avatar-viewer') return;
-        if (message['state'] == 'ready') _finish(false);
+        if (message['state'] == 'ready') {
+          _finish(false);
+          _sendHeight();
+        }
         if (message['state'] == 'error') _finish(true);
       } catch (_) {
         _finish(true);
       }
     }).toJS;
     web.window.addEventListener('message', _listener);
+  }
+
+  void _sendHeight() {
+    _frame?.contentWindow?.postMessage(
+      {'type': 'osee:avatar-config', 'heightMm': widget.heightMm}.jsify(),
+      web.window.location.origin.toJS,
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant _WebAvatarViewer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!_loading && !_failed && oldWidget.heightMm != widget.heightMm) {
+      _sendHeight();
+    }
   }
 
   void _finish(bool failed) {

@@ -90,6 +90,10 @@ void main() {
       tester.widget<AvatarViewer>(find.byType(AvatarViewer)).model,
       AvatarModel.male,
     );
+    expect(
+      tester.widget<AvatarViewer>(find.byType(AvatarViewer)).heightMm,
+      1650,
+    );
     await tester.pumpWidget(const SizedBox());
     await tester.pumpWidget(
       OseeApp(initialAuth: auth, initialStore: store, bodyProfileApi: api()),
@@ -406,6 +410,46 @@ void main() {
     expect(saved?['heightMm'], 1661);
     expect(saved?['gender'], 'FEMALE');
     expect(done, isTrue);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+    body.dispose();
+    auth.dispose();
+  });
+
+  testWidgets('t11 키 입력을 미리보기에 전달하고 성별 선택 후에도 입력한 키를 유지한다', (tester) async {
+    final auth = makeAuth();
+    await auth.loginWithGoogle('test');
+    final body = BodyProfileController(
+      auth: auth,
+      api: AuthApi(
+        client: MockClient(
+          (_) async => utf8Response(jsonEncode(bodyJson()), 200),
+        ),
+      ),
+    );
+    await tester.pumpWidget(
+      BodyProfileScope(
+        controller: body,
+        child: MaterialApp(home: BodySetupPage(onNext: () {})),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final input = find.byKey(const ValueKey('heightMm'));
+    await tester.ensureVisible(input);
+    await tester.enterText(input, '172.3');
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<AvatarViewer>(find.byType(AvatarViewer)).heightMm,
+      1723,
+    );
+    await tester.ensureVisible(find.byType(DropdownButtonFormField<String>));
+    await tester.tap(find.byType(DropdownButtonFormField<String>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('남성').last);
+    await tester.pumpAndSettle();
+    final preview = tester.widget<AvatarViewer>(find.byType(AvatarViewer));
+    expect(preview.model, AvatarModel.male);
+    expect(preview.heightMm, 1723);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox());
     body.dispose();

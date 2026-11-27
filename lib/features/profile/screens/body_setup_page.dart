@@ -127,6 +127,9 @@ class _BodySetupPageState extends State<BodySetupPage> {
                     const SizedBox(height: 16),
                     AvatarViewer(
                       height: 300,
+                      heightMm: BodyMeasurement.height
+                          .parseInput(_inputs[BodyMeasurement.height]!.text)
+                          ?.toInt(),
                       model: _gender == 'MALE'
                           ? AvatarModel.male
                           : AvatarModel.female,
@@ -137,6 +140,9 @@ class _BodySetupPageState extends State<BodySetupPage> {
                     TextFormField(
                       key: ValueKey(field.key),
                       controller: _inputs[field],
+                      onChanged: field == BodyMeasurement.height
+                          ? (_) => setState(() {})
+                          : null,
                       enabled: !busy && body.loaded,
                       keyboardType: const TextInputType.numberWithOptions(
                         decimal: true,
@@ -169,7 +175,7 @@ class _BodySetupPageState extends State<BodySetupPage> {
                     const SizedBox(height: 12),
                   ],
                   const Text(
-                    '현재 피팅룸에는 선택한 성별의 기본 모델이 표시됩니다. 치수에 따른 체형 변형은 준비 중입니다.',
+                    '선택한 기본 모델에 키를 반영합니다. 몸무게와 부위별 둘레에 따른 체형 변형은 준비 중입니다.',
                   ),
                   const SizedBox(height: 20),
                   FilledButton(

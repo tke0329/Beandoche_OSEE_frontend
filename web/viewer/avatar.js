@@ -12,6 +12,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { reportFailure } from './avatar-bootstrap.js';
+import { heightTransform } from './avatar-height.js';
 
 async function start() {
     const params = new URLSearchParams(location.search);
@@ -294,12 +295,44 @@ async function start() {
     avatar.traverse((o) => {
         if (o.isMesh) o.frustumCulled = false;
     });
-    scene.add(avatar);
+    const bodyRoot = new THREE.Group();
+    bodyRoot.add(avatar);
+    scene.add(bodyRoot);
+    const baseBounds = new THREE.Box3().setFromObject(avatar);
+    const baseHeight = baseBounds.max.y - baseBounds.min.y;
     rig = buildRig(avatar);
     poseStart = clock.getElapsedTime();
-    frame(avatar);
+    const heightLabel = document.querySelector('#height');
+    function applyHeight(heightMm) {
+        const transform = heightTransform(
+            baseBounds.min.y,
+            baseHeight,
+            heightMm,
+        );
+        bodyRoot.scale.setScalar(transform.scale);
+        bodyRoot.position.y = transform.offsetY;
+        bodyRoot.updateMatrixWorld(true);
+        frame(bodyRoot);
+        heightLabel.textContent =
+            heightMm === null ? '' : `키 ${heightMm / 10} cm`;
+    }
+    applyHeight(null);
+    addEventListener('message', (event) => {
+        if (
+            event.origin !== location.origin ||
+            event.source !== parent ||
+            event.data?.type !== 'osee:avatar-config'
+        )
+            return;
+        try {
+            applyHeight(event.data.heightMm);
+        } catch {
+            renderer.setAnimationLoop(null);
+            reportFailure();
+        }
+    });
     pedestal.visible = true;
-    addEventListener('resize', () => frame(avatar));
+    addEventListener('resize', () => frame(bodyRoot));
     statusEl.hidden = true;
     statusEl.style.display = 'none';
     hintEl.style.opacity = '1';
