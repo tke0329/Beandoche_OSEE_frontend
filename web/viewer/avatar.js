@@ -346,8 +346,6 @@ async function start() {
     const weightLabel = document.querySelector('#weight');
     const rangeLabel = document.querySelector('#range');
     function applyMeasurements(heightMm, weightKg, dimensions = {}) {
-        let minY = baseBounds.min.y;
-        let modelHeight = baseHeight;
         let targetHeight = heightMm;
         let width = 1;
         if (calibration) {
@@ -357,14 +355,6 @@ async function start() {
                 weightKg,
                 dimensions,
             );
-            const leg = morph.influences.Leg_Length;
-            const side = leg < 0 ? 0 : 1;
-            const floorDelta =
-                Math.abs(leg) * calibration.legFloorDeltas[side] * baseHeight;
-            const topDelta =
-                Math.abs(leg) * calibration.legTopDeltas[side] * baseHeight;
-            minY += floorDelta;
-            modelHeight += topDelta - floorDelta;
             targetHeight = morph.height;
             for (const [key, value] of Object.entries(morph.influences)) {
                 const meshes = morphMeshes.filter(
@@ -382,7 +372,11 @@ async function start() {
         } else {
             width = widthScaleForWeight(weightKg);
         }
-        const transform = heightTransform(minY, modelHeight, targetHeight);
+        const transform = heightTransform(
+            baseBounds.min.y,
+            baseHeight,
+            targetHeight,
+        );
         const widthScale = transform.scale * width;
         bodyRoot.scale.set(widthScale, transform.scale, widthScale);
         bodyRoot.position.y = transform.offsetY;

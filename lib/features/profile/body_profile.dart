@@ -5,36 +5,35 @@ enum BodyMeasurement {
   waist('waistCircumferenceMm', '허리둘레'),
   hip('hipCircumferenceMm', '엉덩이둘레'),
   thigh('thighCircumferenceMm', '허벅지둘레'),
-  inseam('inseamMm', '인심 길이');
+  underbust('underbustCircumferenceMm', '밑가슴둘레');
 
   const BodyMeasurement(this.key, this.label);
   final String key;
   final String label;
   bool get isLength => this != weight;
-  bool get isMorphDimension => this != height && this != weight;
-  String get unit => isLength ? 'cm' : 'kg';
+  bool get isRequired => this != underbust;
+  bool get _usesInches => isLength && this != height;
+  bool get isMorphDimension => _usesInches && this != underbust;
+  String get unit => _usesInches ? 'in' : (isLength ? 'cm' : 'kg');
+  int get decimalPlaces => _usesInches ? 2 : (isLength ? 1 : 3);
+  double get _unitsFactor => _usesInches ? 25.4 : (isLength ? 10 : 1);
+  double inputUnits(num value) => value / _unitsFactor;
 
   num? parseInput(String input) {
     final text = input.trim();
-    final pattern = isLength
-        ? RegExp(r'^\d+(?:\.\d)?$')
-        : RegExp(r'^\d+(?:\.\d{1,3})?$');
+    final pattern = RegExp('^\\d+(?:\\.\\d{1,$decimalPlaces})?\$');
     if (!pattern.hasMatch(text)) return null;
-    if (!isLength) {
-      final value = double.tryParse(text);
-      return value != null && value > 0 && value < 100000 ? value : null;
-    }
-    final parts = text.split('.');
-    final whole = int.tryParse(parts.first);
-    if (whole == null || whole > 99999999) return null;
-    final mm = whole * 10 + (parts.length == 2 ? int.parse(parts[1]) : 0);
+    final value = double.tryParse(text);
+    if (value == null || !value.isFinite || value <= 0) return null;
+    if (!isLength) return value < 100000 ? value : null;
+    final length = value * _unitsFactor;
+    if (length > 1000000000) return null;
+    final mm = length.round();
     return mm > 0 && mm <= 999999999 ? mm : null;
   }
 
   String display(num value) {
-    final text = (isLength ? value / 10 : value).toStringAsFixed(
-      isLength ? 1 : 3,
-    );
+    final text = inputUnits(value).toStringAsFixed(decimalPlaces);
     return text.replaceFirst(RegExp(r'\.?0+$'), '');
   }
 }
@@ -44,6 +43,7 @@ class BodyMeasurements {
     : values = Map.unmodifiable(values) {
     for (final field in BodyMeasurement.values) {
       final value = values[field];
+      if (value == null && !field.isRequired) continue;
       if (value == null ||
           !value.isFinite ||
           value <= 0 ||
@@ -51,6 +51,10 @@ class BodyMeasurements {
           (!field.isLength && value >= 100000)) {
         throw const FormatException('Invalid body measurement');
       }
+    }
+    final band = values[BodyMeasurement.underbust];
+    if (band != null && band >= values[BodyMeasurement.chest]!) {
+      throw const FormatException('Invalid underbust');
     }
   }
 
@@ -68,6 +72,7 @@ class BodyMeasurements {
     final values = <BodyMeasurement, num>{};
     for (final field in BodyMeasurement.values) {
       final value = json[field.key];
+      if (value == null && !field.isRequired) continue;
       if (value is! num) throw const FormatException('Invalid measurement');
       values[field] = value;
     }
@@ -75,8 +80,31 @@ class BodyMeasurements {
   }
 
   Map<String, num> toJson() => {
-    for (final field in BodyMeasurement.values) field.key: values[field]!,
+    for (final field in values.keys) field.key: values[field]!,
   };
+}
+
+// Reference differences for the preview, based on the Wacoal A–F size guide.
+enum BustCup {
+  a('A', 100),
+  b('B', 125),
+  c('C', 150),
+  d('D', 175),
+  e('E', 200),
+  f('F', 225);
+
+  const BustCup(this.label, this.differenceMm);
+  final String label;
+  final int differenceMm;
+
+  static BustCup? fromMeasurements(num? bustMm, num? bandMm) {
+    if (bustMm == null || bandMm == null) return null;
+    final difference = bustMm - bandMm;
+    for (final cup in values) {
+      if ((difference - cup.differenceMm).abs() <= 12.5) return cup;
+    }
+    return null;
+  }
 }
 
 class BodyProfile {

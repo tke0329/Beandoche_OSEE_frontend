@@ -74,8 +74,9 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('남성').last);
     await tester.pumpAndSettle();
-    final values = ['165', '55.125', '85', '65', '90', '50', '75'];
-    for (final entry in BodyMeasurement.values.indexed) {
+    final values = ['165', '55.125', '33.46', '25.59', '35.43', '19.69'];
+    for (final entry
+        in BodyMeasurement.values.where((field) => field.isRequired).indexed) {
       final input = find.byKey(ValueKey(entry.$2.key));
       await tester.ensureVisible(input);
       await tester.enterText(input, values[entry.$1]);
@@ -86,6 +87,8 @@ void main() {
     expect(saved?['gender'], 'MALE');
     expect(saved?['heightMm'], 1650);
     expect(saved?['weightKg'], 55.125);
+    expect(saved, isNot(contains('inseamMm')));
+    expect(saved?['chestCircumferenceMm'], 850);
     expect(find.byType(FittingPage), findsOneWidget);
     expect(
       tester.widget<AvatarViewer>(find.byType(AvatarViewer)).model,
@@ -265,7 +268,14 @@ void main() {
 
   test('t1 cm를 정수 mm로 변환하고 잘못된 입력을 거부한다', () {
     expect(BodyMeasurement.height.parseInput('165.1'), 1651);
-    expect(BodyMeasurement.chest.parseInput('85'), 850);
+    expect(BodyMeasurement.chest.parseInput('33.46'), 850);
+    expect(BodyMeasurement.chest.display(850), '33.46');
+    for (var mm = 1; mm < 2000; mm++) {
+      expect(
+        BodyMeasurement.chest.parseInput(BodyMeasurement.chest.display(mm)),
+        mm,
+      );
+    }
     expect(BodyMeasurement.weight.parseInput('55.125'), 55.125);
     for (final text in ['', '-1', '0', 'NaN', 'Infinity', '1e3', '1.23']) {
       expect(BodyMeasurement.height.parseInput(text), isNull);
@@ -475,13 +485,89 @@ void main() {
     if (AvatarViewer.useLocalMorphs) {
       final waist = find.byKey(const ValueKey('waistCircumferenceMm'));
       await tester.ensureVisible(waist);
-      await tester.enterText(waist, '88.2');
+      await tester.enterText(waist, '34.72');
       await tester.pumpAndSettle();
       expect(
         tester.widget<AvatarViewer>(find.byType(AvatarViewer)).dimensionsMm,
         containsPair('waistCircumferenceMm', 882),
       );
     }
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+    body.dispose();
+    auth.dispose();
+  });
+
+  testWidgets('t12 슬라이더와 컵 선택이 같은 인치 입력과 저장값을 바꾼다', (tester) async {
+    tester.view.physicalSize = const Size(1280, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final auth = makeAuth();
+    await auth.loginWithGoogle('test');
+    Map<String, Object?>? saved;
+    final body = BodyProfileController(
+      auth: auth,
+      api: AuthApi(
+        client: MockClient((request) async {
+          if (request.method == 'PUT') {
+            saved = jsonDecode(request.body) as Map<String, Object?>;
+            return utf8Response(
+              jsonEncode({
+                ...bodyJson(),
+                'measurements': {...saved!}..remove('gender'),
+              }),
+              200,
+            );
+          }
+          return utf8Response(jsonEncode(bodyJson()), 200);
+        }),
+      ),
+    );
+    await tester.pumpWidget(
+      BodyProfileScope(
+        controller: body,
+        child: MaterialApp(home: BodySetupPage(onNext: () {})),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('inseamMm')), findsNothing);
+    final chest = find.byKey(const ValueKey('chestCircumferenceMm'));
+    await tester.tap(find.text('슬라이더'));
+    await tester.pumpAndSettle();
+    final chestSlider = find.byKey(
+      const ValueKey('chestCircumferenceMm-slider'),
+    );
+    await tester.ensureVisible(chestSlider);
+    await tester.tapAt(tester.getTopRight(chestSlider) + const Offset(-60, 24));
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<TextFormField>(chest).controller!.text,
+      isNot('33.46'),
+    );
+    await tester.ensureVisible(find.text('숫자 입력'));
+    await tester.tap(find.text('숫자 입력'));
+    await tester.pumpAndSettle();
+    expect(chestSlider, findsNothing);
+    final band = find.byKey(const ValueKey('underbustCircumferenceMm'));
+    await tester.ensureVisible(band);
+    await tester.enterText(band, '28');
+    await tester.pumpAndSettle();
+    final dropdown = find.byKey(const ValueKey('bust-cup'));
+    await tester.ensureVisible(dropdown);
+    await tester.tap(dropdown);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('C컵').last);
+    await tester.pumpAndSettle();
+    expect(tester.widget<TextFormField>(chest).controller!.text, '33.9');
+    final save = find.text('신체정보 저장');
+    await tester.ensureVisible(save);
+    await tester.tap(save);
+    await tester.pumpAndSettle();
+    expect(saved?['underbustCircumferenceMm'], 711);
+    expect(saved?['chestCircumferenceMm'], 861);
+    expect(saved, isNot(contains('inseamMm')));
+    expect(BustCup.fromMeasurements(861, 711), BustCup.c);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox());
     body.dispose();

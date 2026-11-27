@@ -56,17 +56,19 @@ test('t2 accounts for weight and linked hip and thigh changes', () => {
     assert.equal(limited, false);
 });
 
-test('t3 fits inseam relative to requested height and clamps impossible inputs', () => {
+test('t3 ignores legacy inseam and clamps circumference at the chosen height', () => {
     const result = solveMorphs(profile, 1700, null, { inseamMm: 790 });
     assert.equal(result.height, 1700);
-    assert.equal(result.influences.Leg_Length, 1);
+    assert.equal(result.influences.Leg_Length, undefined);
     assert.equal(result.limited, false);
     for (const [input, limit] of [
         [9999, 1],
         [1, -1],
     ]) {
-        const clamped = solveMorphs(profile, 1700, null, { inseamMm: input });
-        assert.equal(clamped.influences.Leg_Length, limit);
+        const clamped = solveMorphs(profile, 1700, null, {
+            chestCircumferenceMm: input,
+        });
+        assert.equal(clamped.influences.Chest, limit);
         assert.equal(clamped.limited, true);
     }
 });

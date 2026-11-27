@@ -20,22 +20,6 @@ function estimate(measurement, influences) {
     );
 }
 
-function fitLeg(height, inseam, targetRatio) {
-    const [lo, short, hi, long] = inseam.keys.Leg_Length;
-    const [, shorter, , taller] = height.keys.Leg_Length;
-    if (targetRatio <= (inseam.base + short) / (height.base + shorter))
-        return lo;
-    if (targetRatio >= (inseam.base + long) / (height.base + taller)) return hi;
-    if (targetRatio < inseam.base / height.base) {
-        const range = short - targetRatio * shorter;
-        const fraction = (targetRatio * height.base - inseam.base) / range;
-        return Math.min(1, Math.max(0, fraction)) * lo;
-    }
-    const range = long - targetRatio * taller;
-    const fraction = (targetRatio * height.base - inseam.base) / range;
-    return Math.min(1, Math.max(0, fraction)) * hi;
-}
-
 function fitGirth(measurement, key, target, influences) {
     const range = measurement.keys[key];
     const [lo, smaller, hi, larger] = range;
@@ -53,21 +37,13 @@ export function solveMorphs(profile, heightMm, weightKg, dimensions) {
     // Preserve the existing 70 kg reference and map each end to the source key range.
     const influences = {
         Weight: width < 1 ? (width - 1) / 0.5 : (width - 1) / 0.3,
-        Leg_Length: 0,
         Chest: 0,
         Waist: 0,
         Hips: 0,
         Leg_Thickness: 0,
     };
     influences.Weight = Math.min(1, Math.max(-0.5, influences.Weight));
-    if (dimensions.inseamMm !== undefined) {
-        influences.Leg_Length = fitLeg(
-            table.heightMm,
-            table.inseamMm,
-            dimensions.inseamMm / height,
-        );
-    }
-    const heightScale = height / estimate(table.heightMm, influences);
+    const heightScale = height / table.heightMm.base;
     const fields = Object.entries(GIRTH_KEYS).filter(
         ([field]) => dimensions[field] !== undefined,
     );
@@ -82,9 +58,8 @@ export function solveMorphs(profile, heightMm, weightKg, dimensions) {
             );
         }
     }
-    const limited = [...fields.map(([field]) => field), 'inseamMm'].some(
-        (field) =>
-            dimensions[field] !== undefined &&
+    const limited = fields.some(
+        ([field]) =>
             Math.abs(
                 estimate(table[field], influences) * heightScale -
                     dimensions[field],
