@@ -130,6 +130,9 @@ class _BodySetupPageState extends State<BodySetupPage> {
                       heightMm: BodyMeasurement.height
                           .parseInput(_inputs[BodyMeasurement.height]!.text)
                           ?.toInt(),
+                      weightKg: BodyMeasurement.weight.parseInput(
+                        _inputs[BodyMeasurement.weight]!.text,
+                      ),
                       model: _gender == 'MALE'
                           ? AvatarModel.male
                           : AvatarModel.female,
@@ -140,7 +143,9 @@ class _BodySetupPageState extends State<BodySetupPage> {
                     TextFormField(
                       key: ValueKey(field.key),
                       controller: _inputs[field],
-                      onChanged: field == BodyMeasurement.height
+                      onChanged:
+                          field == BodyMeasurement.height ||
+                              field == BodyMeasurement.weight
                           ? (_) => setState(() {})
                           : null,
                       enabled: !busy && body.loaded,
@@ -175,7 +180,7 @@ class _BodySetupPageState extends State<BodySetupPage> {
                     const SizedBox(height: 12),
                   ],
                   const Text(
-                    '선택한 기본 모델에 키를 반영합니다. 몸무게와 부위별 둘레에 따른 체형 변형은 준비 중입니다.',
+                    '키와 몸무게를 미리보기에 반영합니다. 몸무게는 70kg 기본형을 기준으로 폭과 깊이를 조절합니다.',
                   ),
                   const SizedBox(height: 20),
                   FilledButton(

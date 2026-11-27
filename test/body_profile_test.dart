@@ -85,6 +85,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(saved?['gender'], 'MALE');
     expect(saved?['heightMm'], 1650);
+    expect(saved?['weightKg'], 55.125);
     expect(find.byType(FittingPage), findsOneWidget);
     expect(
       tester.widget<AvatarViewer>(find.byType(AvatarViewer)).model,
@@ -93,6 +94,10 @@ void main() {
     expect(
       tester.widget<AvatarViewer>(find.byType(AvatarViewer)).heightMm,
       1650,
+    );
+    expect(
+      tester.widget<AvatarViewer>(find.byType(AvatarViewer)).weightKg,
+      55.125,
     );
     await tester.pumpWidget(const SizedBox());
     await tester.pumpWidget(
@@ -103,6 +108,10 @@ void main() {
     await tester.pumpAndSettle();
     expect(gets, 2);
     expect(find.byType(FittingPage), findsOneWidget);
+    expect(
+      tester.widget<AvatarViewer>(find.byType(AvatarViewer)).weightKg,
+      55.125,
+    );
     expect(
       tester.widget<AvatarViewer>(find.byType(AvatarViewer)).model,
       AvatarModel.male,
@@ -416,7 +425,7 @@ void main() {
     auth.dispose();
   });
 
-  testWidgets('t11 키 입력을 미리보기에 전달하고 성별 선택 후에도 입력한 키를 유지한다', (tester) async {
+  testWidgets('t11 키와 몸무게를 미리보기에 전달하고 성별 선택 후에도 유지한다', (tester) async {
     final auth = makeAuth();
     await auth.loginWithGoogle('test');
     final body = BodyProfileController(
@@ -442,6 +451,14 @@ void main() {
       tester.widget<AvatarViewer>(find.byType(AvatarViewer)).heightMm,
       1723,
     );
+    final weight = find.byKey(const ValueKey('weightKg'));
+    await tester.ensureVisible(weight);
+    await tester.enterText(weight, '92.5');
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<AvatarViewer>(find.byType(AvatarViewer)).weightKg,
+      92.5,
+    );
     await tester.ensureVisible(find.byType(DropdownButtonFormField<String>));
     await tester.tap(find.byType(DropdownButtonFormField<String>));
     await tester.pumpAndSettle();
@@ -450,6 +467,7 @@ void main() {
     final preview = tester.widget<AvatarViewer>(find.byType(AvatarViewer));
     expect(preview.model, AvatarModel.male);
     expect(preview.heightMm, 1723);
+    expect(preview.weightKg, 92.5);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox());
     body.dispose();

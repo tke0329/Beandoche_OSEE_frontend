@@ -15,7 +15,8 @@
                   position: absolute; left: 0; right: 0; bottom: 8px; text-align: center;
                   font: 12px sans-serif; color: #9aa0a8; pointer-events: none; opacity: 0; transition: opacity .3s;
             }
-            #height { position: absolute; top: 8px; right: 12px; font: 13px sans-serif; color: #59616c; }
+            #measurements { position: absolute; top: 8px; right: 12px; font: 13px sans-serif; color: #59616c; display: flex; gap: 8px; }
+            #measurements span:empty { display: none; }
       </style>
       <script type="importmap">
             {
@@ -29,7 +30,7 @@
 <body>
       <div id="status">아바타를 불러오는 중...</div>
       <div id="hint">드래그해서 돌려보기 · 스크롤로 확대</div>
-      <div id="height" role="status" aria-live="polite"></div>
+      <div id="measurements" role="status" aria-live="polite"><span id="height"></span><span id="weight"></span></div>
       <script type="module" src="./avatar-bootstrap.js"></script>
 </body>
 </html>

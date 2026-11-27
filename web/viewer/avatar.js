@@ -13,6 +13,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { reportFailure } from './avatar-bootstrap.js';
 import { heightTransform } from './avatar-height.js';
+import { MAX_WIDTH_SCALE, widthScaleForWeight } from './avatar-weight.js';
 
 async function start() {
     const params = new URLSearchParams(location.search);
@@ -140,10 +141,19 @@ async function start() {
     const _d = new THREE.Vector3(),
         _a = new THREE.Vector3();
 
-    /** Rotate `bone` by `angle` around a world-space `axis`, keeping its children attached. */
+    // Pose in avatar space so body width and depth do not skew bone rotations.
+    function bodyQuaternion(object, out) {
+        out.identity();
+        for (let node = object; node && node !== bodyRoot; node = node.parent) {
+            out.premultiply(node.quaternion);
+        }
+        return out;
+    }
+
+    /** Rotate `bone` by `angle` around an axis in avatar space. */
     function turn(bone, axis, angle) {
         if (!bone || !angle) return;
-        bone.parent.getWorldQuaternion(_p);
+        bodyQuaternion(bone.parent, _p);
         _pi.copy(_p).invert();
         _q.setFromAxisAngle(axis, angle);
         bone.quaternion.premultiply(_p).premultiply(_q).premultiply(_pi);
@@ -153,7 +163,7 @@ async function start() {
     function direction(bone, out = _d) {
         return out
             .set(0, 1, 0)
-            .applyQuaternion(bone.getWorldQuaternion(_q))
+            .applyQuaternion(bodyQuaternion(bone, _q))
             .normalize();
     }
 
@@ -302,10 +312,10 @@ async function start() {
     const PREVIEW_FRAME_HEIGHT = 2.2;
     let frameHeight;
     function frameBody() {
-        const scale = frameHeight / baseHeight;
+        const frameWidthScale = (frameHeight / baseHeight) * MAX_WIDTH_SCALE;
         const bounds = baseBounds.clone();
-        bounds.min.multiplyScalar(scale);
-        bounds.max.multiplyScalar(scale);
+        bounds.min.multiplyScalar(frameWidthScale);
+        bounds.max.multiplyScalar(frameWidthScale);
         bounds.min.y = 0;
         bounds.max.y = frameHeight;
         frame(bounds);
@@ -313,13 +323,15 @@ async function start() {
     rig = buildRig(avatar);
     poseStart = clock.getElapsedTime();
     const heightLabel = document.querySelector('#height');
-    function applyHeight(heightMm) {
+    const weightLabel = document.querySelector('#weight');
+    function applyMeasurements(heightMm, weightKg) {
         const transform = heightTransform(
             baseBounds.min.y,
             baseHeight,
             heightMm,
         );
-        bodyRoot.scale.setScalar(transform.scale);
+        const widthScale = transform.scale * widthScaleForWeight(weightKg);
+        bodyRoot.scale.set(widthScale, transform.scale, widthScale);
         bodyRoot.position.y = transform.offsetY;
         bodyRoot.updateMatrixWorld(true);
         const nextFrameHeight =
@@ -332,8 +344,10 @@ async function start() {
         }
         heightLabel.textContent =
             heightMm === null ? '' : `키 ${heightMm / 10} cm`;
+        weightLabel.textContent =
+            weightKg === null ? '' : `몸무게 ${weightKg} kg`;
     }
-    applyHeight(null);
+    applyMeasurements(null, null);
     addEventListener('message', (event) => {
         if (
             event.origin !== location.origin ||
@@ -342,7 +356,7 @@ async function start() {
         )
             return;
         try {
-            applyHeight(event.data.heightMm);
+            applyMeasurements(event.data.heightMm, event.data.weightKg ?? null);
         } catch {
             renderer.setAnimationLoop(null);
             reportFailure();

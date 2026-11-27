@@ -95,7 +95,9 @@ class _FittingPageState extends State<FittingPage> {
             if (body.profile != null)
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 8),
-                child: Text('계정에 저장한 기본 모델과 키를 반영합니다. 부위별 체형 변형은 준비 중입니다.'),
+                child: Text(
+                  '저장한 키와 몸무게를 기본 모델에 반영합니다. 부위별 둘레는 아직 모델에 반영되지 않습니다.',
+                ),
               ),
           ],
           _AvatarStage(
@@ -103,6 +105,8 @@ class _FittingPageState extends State<FittingPage> {
             model: model,
             heightMm: body?.profile?.measurements.values[BodyMeasurement.height]
                 ?.toInt(),
+            weightKg:
+                body?.profile?.measurements.values[BodyMeasurement.weight],
             onModel:
                 body != null &&
                     (body.loading ||
@@ -208,10 +212,12 @@ class _AvatarStage extends StatelessWidget {
     required this.model,
     required this.onModel,
     this.heightMm,
+    this.weightKg,
   });
   final double height;
   final AvatarModel model;
   final int? heightMm;
+  final num? weightKg;
   final ValueChanged<AvatarModel>? onModel;
 
   @override
@@ -257,6 +263,7 @@ class _AvatarStage extends StatelessWidget {
                 height: height,
                 model: model,
                 heightMm: heightMm,
+                weightKg: weightKg,
               ),
             ),
           ],

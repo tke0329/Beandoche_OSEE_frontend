@@ -8,18 +8,29 @@ import 'avatar_viewer.dart';
 import 'avatar_stage.dart';
 
 /// `web/viewer/avatar.html` is a plain file next to index.html, so it resolves against the base href.
-Widget buildAvatarViewer(double height, AvatarModel model, int? heightMm) =>
-    _WebAvatarViewer(height: height, model: model, heightMm: heightMm);
+Widget buildAvatarViewer(
+  double height,
+  AvatarModel model,
+  int? heightMm,
+  num? weightKg,
+) => _WebAvatarViewer(
+  height: height,
+  model: model,
+  heightMm: heightMm,
+  weightKg: weightKg,
+);
 
 class _WebAvatarViewer extends StatefulWidget {
   const _WebAvatarViewer({
     required this.height,
     required this.model,
     this.heightMm,
+    this.weightKg,
   });
   final double height;
   final AvatarModel model;
   final int? heightMm;
+  final num? weightKg;
 
   @override
   State<_WebAvatarViewer> createState() => _WebAvatarViewerState();
@@ -47,7 +58,7 @@ class _WebAvatarViewerState extends State<_WebAvatarViewer> {
         if (message is! Map || message['type'] != 'osee:avatar-viewer') return;
         if (message['state'] == 'ready') {
           _finish(false);
-          _sendHeight();
+          _sendConfig();
         }
         if (message['state'] == 'error') _finish(true);
       } catch (_) {
@@ -57,9 +68,13 @@ class _WebAvatarViewerState extends State<_WebAvatarViewer> {
     web.window.addEventListener('message', _listener);
   }
 
-  void _sendHeight() {
+  void _sendConfig() {
     _frame?.contentWindow?.postMessage(
-      {'type': 'osee:avatar-config', 'heightMm': widget.heightMm}.jsify(),
+      {
+        'type': 'osee:avatar-config',
+        'heightMm': widget.heightMm,
+        'weightKg': widget.weightKg,
+      }.jsify(),
       web.window.location.origin.toJS,
     );
   }
@@ -67,8 +82,11 @@ class _WebAvatarViewerState extends State<_WebAvatarViewer> {
   @override
   void didUpdateWidget(covariant _WebAvatarViewer oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!_loading && !_failed && oldWidget.heightMm != widget.heightMm) {
-      _sendHeight();
+    if (!_loading &&
+        !_failed &&
+        (oldWidget.heightMm != widget.heightMm ||
+            oldWidget.weightKg != widget.weightKg)) {
+      _sendConfig();
     }
   }
 
