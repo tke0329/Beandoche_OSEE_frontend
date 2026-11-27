@@ -103,10 +103,8 @@ async function start() {
     resize();
 
     // ---------------------------------------------------------------- framing
-    function frame(object) {
-        const box = new THREE.Box3()
-            .setFromObject(object)
-            .union(new THREE.Box3().setFromObject(pedestal));
+    function frame(box) {
+        box.union(new THREE.Box3().setFromObject(pedestal));
         const size = box.getSize(new THREE.Vector3());
         const center = box.getCenter(new THREE.Vector3());
         const vFov = THREE.MathUtils.degToRad(camera.fov);
@@ -300,6 +298,18 @@ async function start() {
     scene.add(bodyRoot);
     const baseBounds = new THREE.Box3().setFromObject(avatar);
     const baseHeight = baseBounds.max.y - baseBounds.min.y;
+    // Fit the camera to a common height so zoom does not cancel out body scaling.
+    const PREVIEW_FRAME_HEIGHT = 2.2;
+    let frameHeight;
+    function frameBody() {
+        const scale = frameHeight / baseHeight;
+        const bounds = baseBounds.clone();
+        bounds.min.multiplyScalar(scale);
+        bounds.max.multiplyScalar(scale);
+        bounds.min.y = 0;
+        bounds.max.y = frameHeight;
+        frame(bounds);
+    }
     rig = buildRig(avatar);
     poseStart = clock.getElapsedTime();
     const heightLabel = document.querySelector('#height');
@@ -312,7 +322,14 @@ async function start() {
         bodyRoot.scale.setScalar(transform.scale);
         bodyRoot.position.y = transform.offsetY;
         bodyRoot.updateMatrixWorld(true);
-        frame(bodyRoot);
+        const nextFrameHeight =
+            heightMm === null
+                ? baseHeight
+                : Math.max(PREVIEW_FRAME_HEIGHT, heightMm / 1000);
+        if (nextFrameHeight !== frameHeight) {
+            frameHeight = nextFrameHeight;
+            frameBody();
+        }
         heightLabel.textContent =
             heightMm === null ? '' : `키 ${heightMm / 10} cm`;
     }
@@ -332,7 +349,7 @@ async function start() {
         }
     });
     pedestal.visible = true;
-    addEventListener('resize', () => frame(bodyRoot));
+    addEventListener('resize', frameBody);
     statusEl.hidden = true;
     statusEl.style.display = 'none';
     hintEl.style.opacity = '1';
