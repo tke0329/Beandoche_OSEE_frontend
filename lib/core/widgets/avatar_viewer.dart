@@ -24,11 +24,17 @@ class AvatarViewer extends StatelessWidget {
     this.model = AvatarModel.female,
     this.heightMm,
     this.weightKg,
+    this.dimensionsMm = const {},
   });
   final double height;
   final AvatarModel model;
   final int? heightMm;
   final num? weightKg;
+  final Map<String, num> dimensionsMm;
+
+  static const useLocalMorphs = bool.fromEnvironment(
+    'OSEE_LOCAL_AVATAR_MORPHS',
+  );
 
   @override
   Widget build(BuildContext context) => SizedBox(
@@ -36,7 +42,13 @@ class AvatarViewer extends StatelessWidget {
     // a new key rebuilds the iframe, so each body gets a fresh viewer
     child: KeyedSubtree(
       key: ValueKey(model),
-      child: platform.buildAvatarViewer(height, model, heightMm, weightKg),
+      child: platform.buildAvatarViewer(
+        height,
+        model,
+        heightMm,
+        weightKg,
+        dimensionsMm,
+      ),
     ),
   );
 }

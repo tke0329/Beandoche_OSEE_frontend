@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:js_interop';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:web/web.dart' as web;
 
@@ -13,11 +14,13 @@ Widget buildAvatarViewer(
   AvatarModel model,
   int? heightMm,
   num? weightKg,
+  Map<String, num> dimensionsMm,
 ) => _WebAvatarViewer(
   height: height,
   model: model,
   heightMm: heightMm,
   weightKg: weightKg,
+  dimensionsMm: dimensionsMm,
 );
 
 class _WebAvatarViewer extends StatefulWidget {
@@ -26,11 +29,13 @@ class _WebAvatarViewer extends StatefulWidget {
     required this.model,
     this.heightMm,
     this.weightKg,
+    required this.dimensionsMm,
   });
   final double height;
   final AvatarModel model;
   final int? heightMm;
   final num? weightKg;
+  final Map<String, num> dimensionsMm;
 
   @override
   State<_WebAvatarViewer> createState() => _WebAvatarViewerState();
@@ -74,6 +79,7 @@ class _WebAvatarViewerState extends State<_WebAvatarViewer> {
         'type': 'osee:avatar-config',
         'heightMm': widget.heightMm,
         'weightKg': widget.weightKg,
+        if (AvatarViewer.useLocalMorphs) 'dimensionsMm': widget.dimensionsMm,
       }.jsify(),
       web.window.location.origin.toJS,
     );
@@ -85,7 +91,9 @@ class _WebAvatarViewerState extends State<_WebAvatarViewer> {
     if (!_loading &&
         !_failed &&
         (oldWidget.heightMm != widget.heightMm ||
-            oldWidget.weightKg != widget.weightKg)) {
+            oldWidget.weightKg != widget.weightKg ||
+            (AvatarViewer.useLocalMorphs &&
+                !mapEquals(oldWidget.dimensionsMm, widget.dimensionsMm)))) {
       _sendConfig();
     }
   }
@@ -106,7 +114,9 @@ class _WebAvatarViewerState extends State<_WebAvatarViewer> {
     _timeout?.cancel();
     _timeout = Timer(const Duration(seconds: 30), () => _finish(true));
     frame
-      ..src = 'viewer/avatar.html?model=${widget.model.id}'
+      ..src =
+          'viewer/avatar.html?model=${widget.model.id}'
+          '${AvatarViewer.useLocalMorphs ? '&morphs=1' : ''}'
       ..title = '3D 아바타 (${widget.model.label})'
       ..setAttribute('allowtransparency', 'true');
     frame.style

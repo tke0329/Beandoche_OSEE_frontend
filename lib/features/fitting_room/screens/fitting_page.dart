@@ -96,7 +96,9 @@ class _FittingPageState extends State<FittingPage> {
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 8),
                 child: Text(
-                  '저장한 키와 몸무게를 기본 모델에 반영합니다. 부위별 둘레는 아직 모델에 반영되지 않습니다.',
+                  AvatarViewer.useLocalMorphs
+                      ? '저장한 신체 치수를 모델 지원 범위 안에서 반영합니다.'
+                      : '저장한 키와 몸무게를 기본 모델에 반영합니다. 부위별 둘레는 아직 모델에 반영되지 않습니다.',
                 ),
               ),
           ],
@@ -107,6 +109,8 @@ class _FittingPageState extends State<FittingPage> {
                 ?.toInt(),
             weightKg:
                 body?.profile?.measurements.values[BodyMeasurement.weight],
+            dimensionsMm:
+                body?.profile?.measurements.morphDimensionsMm ?? const {},
             onModel:
                 body != null &&
                     (body.loading ||
@@ -213,11 +217,13 @@ class _AvatarStage extends StatelessWidget {
     required this.onModel,
     this.heightMm,
     this.weightKg,
+    required this.dimensionsMm,
   });
   final double height;
   final AvatarModel model;
   final int? heightMm;
   final num? weightKg;
+  final Map<String, num> dimensionsMm;
   final ValueChanged<AvatarModel>? onModel;
 
   @override
@@ -264,6 +270,7 @@ class _AvatarStage extends StatelessWidget {
                 model: model,
                 heightMm: heightMm,
                 weightKg: weightKg,
+                dimensionsMm: dimensionsMm,
               ),
             ),
           ],

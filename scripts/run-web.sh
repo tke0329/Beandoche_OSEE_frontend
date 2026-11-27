@@ -13,4 +13,9 @@ else
 fi
 
 echo "서버 준비가 끝나면 브라우저에서 http://localhost:5173 을 열어주세요."
-exec flutter run -d web-server --web-hostname localhost --web-port 5173 --dart-define-from-file="$config_file" "$@"
+morph_dir=web/viewer/local-morphs
+morph_args=()
+if [[ -f "$morph_dir/male.glb" && -f "$morph_dir/female.glb" && -f "$morph_dir/calibration.json" ]]; then
+  morph_args+=(--dart-define=OSEE_LOCAL_AVATAR_MORPHS=true)
+fi
+exec flutter run -d web-server --web-hostname localhost --web-port 5173 --dart-define-from-file="$config_file" "${morph_args[@]}" "$@"

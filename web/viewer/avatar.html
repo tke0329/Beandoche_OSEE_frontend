@@ -17,6 +17,7 @@
             }
             #measurements { position: absolute; top: 8px; right: 12px; font: 13px sans-serif; color: #59616c; display: flex; gap: 8px; }
             #measurements span:empty { display: none; }
+            #range { position: absolute; top: 28px; right: 12px; font: 12px sans-serif; color: #59616c; }
       </style>
       <script type="importmap">
             {
@@ -31,6 +32,7 @@
       <div id="status">아바타를 불러오는 중...</div>
       <div id="hint">드래그해서 돌려보기 · 스크롤로 확대</div>
       <div id="measurements" role="status" aria-live="polite"><span id="height"></span><span id="weight"></span></div>
+      <div id="range" role="status" hidden>일부 치수는 모델 지원 범위까지만 반영됩니다.</div>
       <script type="module" src="./avatar-bootstrap.js"></script>
 </body>
 </html>

@@ -14,14 +14,19 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { reportFailure } from './avatar-bootstrap.js';
 import { heightTransform } from './avatar-height.js';
 import { MAX_WIDTH_SCALE, widthScaleForWeight } from './avatar-weight.js';
+import { solveMorphs } from './avatar-morphs.js';
 
 async function start() {
     const params = new URLSearchParams(location.search);
     const MODELS = { female: 'avatar_woman.glb', male: 'avatar.glb' };
+    const model = params.get('model') === 'male' ? 'male' : 'female';
+    const localMorphs = params.get('morphs') === '1' && !params.has('src');
     const SRC =
         params.get('src') ??
         new URL(
-            `../assets/modeling_glb/fitted/${MODELS[params.get('model')] ?? MODELS.female}`,
+            localMorphs
+                ? `./local-morphs/${model}.glb`
+                : `../assets/modeling_glb/fitted/${MODELS[model]}`,
             location.href,
         ).href;
     const IDLE =
@@ -298,10 +303,25 @@ async function start() {
     }
 
     const clock = new THREE.Clock();
-    const gltf = await new GLTFLoader().loadAsync(SRC);
+    const [gltf, calibration] = await Promise.all([
+        new GLTFLoader().loadAsync(SRC),
+        localMorphs
+            ? fetch('./local-morphs/calibration.json').then(
+                  async (response) => {
+                      if (!response.ok)
+                          throw new Error('Missing avatar calibration');
+                      return (await response.json())[model];
+                  },
+              )
+            : null,
+    ]);
+    if (localMorphs && !calibration)
+        throw new Error('Missing model calibration');
     const avatar = gltf.scene;
+    const morphMeshes = [];
     avatar.traverse((o) => {
         if (o.isMesh) o.frustumCulled = false;
+        if (o.morphTargetDictionary) morphMeshes.push(o);
     });
     const bodyRoot = new THREE.Group();
     bodyRoot.add(avatar);
@@ -324,20 +344,53 @@ async function start() {
     poseStart = clock.getElapsedTime();
     const heightLabel = document.querySelector('#height');
     const weightLabel = document.querySelector('#weight');
-    function applyMeasurements(heightMm, weightKg) {
-        const transform = heightTransform(
-            baseBounds.min.y,
-            baseHeight,
-            heightMm,
-        );
-        const widthScale = transform.scale * widthScaleForWeight(weightKg);
+    const rangeLabel = document.querySelector('#range');
+    function applyMeasurements(heightMm, weightKg, dimensions = {}) {
+        let minY = baseBounds.min.y;
+        let modelHeight = baseHeight;
+        let targetHeight = heightMm;
+        let width = 1;
+        if (calibration) {
+            const morph = solveMorphs(
+                calibration,
+                heightMm,
+                weightKg,
+                dimensions,
+            );
+            const leg = morph.influences.Leg_Length;
+            const side = leg < 0 ? 0 : 1;
+            const floorDelta =
+                Math.abs(leg) * calibration.legFloorDeltas[side] * baseHeight;
+            const topDelta =
+                Math.abs(leg) * calibration.legTopDeltas[side] * baseHeight;
+            minY += floorDelta;
+            modelHeight += topDelta - floorDelta;
+            targetHeight = morph.height;
+            for (const [key, value] of Object.entries(morph.influences)) {
+                const meshes = morphMeshes.filter(
+                    (mesh) => key in mesh.morphTargetDictionary,
+                );
+                if (meshes.length === 0)
+                    throw new Error('Missing avatar morph target');
+                for (const mesh of meshes) {
+                    mesh.morphTargetInfluences[
+                        mesh.morphTargetDictionary[key]
+                    ] = value;
+                }
+            }
+            rangeLabel.hidden = !morph.limited;
+        } else {
+            width = widthScaleForWeight(weightKg);
+        }
+        const transform = heightTransform(minY, modelHeight, targetHeight);
+        const widthScale = transform.scale * width;
         bodyRoot.scale.set(widthScale, transform.scale, widthScale);
         bodyRoot.position.y = transform.offsetY;
         bodyRoot.updateMatrixWorld(true);
         const nextFrameHeight =
-            heightMm === null
+            targetHeight === null
                 ? baseHeight
-                : Math.max(PREVIEW_FRAME_HEIGHT, heightMm / 1000);
+                : Math.max(PREVIEW_FRAME_HEIGHT, targetHeight / 1000);
         if (nextFrameHeight !== frameHeight) {
             frameHeight = nextFrameHeight;
             frameBody();
@@ -356,7 +409,11 @@ async function start() {
         )
             return;
         try {
-            applyMeasurements(event.data.heightMm, event.data.weightKg ?? null);
+            applyMeasurements(
+                event.data.heightMm,
+                event.data.weightKg ?? null,
+                event.data.dimensionsMm,
+            );
         } catch {
             renderer.setAnimationLoop(null);
             reportFailure();

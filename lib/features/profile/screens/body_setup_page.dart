@@ -6,6 +6,8 @@ import '../body_profile.dart';
 import '../body_profile_controller.dart';
 import '../../../core/widgets/avatar_viewer.dart';
 
+const _morphPreview = AvatarViewer.useLocalMorphs;
+
 class BodySetupPage extends StatefulWidget {
   const BodySetupPage({super.key, required this.onNext, this.onSaved});
   final VoidCallback onNext;
@@ -87,6 +89,15 @@ class _BodySetupPageState extends State<BodySetupPage> {
       return const Scaffold(body: Center(child: Text('로그인 상태를 확인해 주세요.')));
     }
     final busy = _initializing || body.loading || body.saving;
+    final dimensions = <String, num>{};
+    if (_morphPreview && _gender != null) {
+      for (final field in BodyMeasurement.values.where(
+        (field) => field.isMorphDimension,
+      )) {
+        final value = field.parseInput(_inputs[field]!.text);
+        if (value != null) dimensions[field.key] = value;
+      }
+    }
     return Scaffold(
       appBar: AppBar(title: const Text('체형정보 설정')),
       body: SingleChildScrollView(
@@ -133,6 +144,7 @@ class _BodySetupPageState extends State<BodySetupPage> {
                       weightKg: BodyMeasurement.weight.parseInput(
                         _inputs[BodyMeasurement.weight]!.text,
                       ),
+                      dimensionsMm: dimensions,
                       model: _gender == 'MALE'
                           ? AvatarModel.male
                           : AvatarModel.female,
@@ -145,7 +157,8 @@ class _BodySetupPageState extends State<BodySetupPage> {
                       controller: _inputs[field],
                       onChanged:
                           field == BodyMeasurement.height ||
-                              field == BodyMeasurement.weight
+                              field == BodyMeasurement.weight ||
+                              _morphPreview
                           ? (_) => setState(() {})
                           : null,
                       enabled: !busy && body.loaded,
@@ -180,7 +193,9 @@ class _BodySetupPageState extends State<BodySetupPage> {
                     const SizedBox(height: 12),
                   ],
                   const Text(
-                    '키와 몸무게를 미리보기에 반영합니다. 몸무게는 70kg 기본형을 기준으로 폭과 깊이를 조절합니다.',
+                    _morphPreview
+                        ? '키, 몸무게와 부위별 치수를 모델 지원 범위 안에서 미리보기에 반영합니다.'
+                        : '키와 몸무게를 미리보기에 반영합니다. 몸무게는 70kg 기본형을 기준으로 폭과 깊이를 조절합니다.',
                   ),
                   const SizedBox(height: 20),
                   FilledButton(

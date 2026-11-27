@@ -9,4 +9,5 @@ Widget buildAvatarViewer(
   AvatarModel model,
   int? heightMm,
   num? weightKg,
+  Map<String, num> dimensionsMm,
 ) => AvatarStage(height: height);

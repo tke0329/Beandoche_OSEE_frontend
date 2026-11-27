@@ -53,7 +53,15 @@ Google Cloud의 승인된 JavaScript 원본에는 `http://localhost`와 `http://
 
 몸무게는 남녀 기본형을 공통 70kg 기준으로 두고 미리보기와 피팅룸에 반영한다. 키는 유지하고 폭·깊이에 각각 `√(kg / 70)` 배율을 적용한다. 렌더링 배율에만 0.75–1.30 한계를 적용하며 이전 입력값의 배율은 누적되지 않는다. 실제 체형이나 둘레 실측을 추정하지 않으며 몸무게·키는 모델 URL이나 로그에 넣지 않는다.
 
-개별 둘레와 여성 가슴 크기 등의 세부 조절은 실제 변형 데이터와 치수 매핑 계약이 필요하다. 서버 생성 요청은 기존 정책대로 PENDING을 유지한다. 배율 계산 검증은 `node --test test/avatar_height_test.mjs test/avatar_weight_test.mjs`로 실행한다.
+로컬 Shape Key 세트가 있으면 가슴·허리·엉덩이·허벅지 둘레와 인심도 반영한다. 70kg은 모델의 Weight 키가 0인 지점이다. 허리와 엉덩이처럼 다른 키에서도 변하는 치수는 치수표의 변화량을 함께 계산한다. 모델 지원 범위 밖의 치수는 렌더링만 제한하며 저장값은 그대로 유지한다. 인심은 앱의 기존 가랑이–발목 입력을 유지하고 치수표의 가랑이–바닥 값을 원본 뼈대의 발목 높이로 보정한다. 별도 여성 가슴 볼륨 키는 제공되지 않아 가슴둘레를 Chest 키로 조절한다. 서버 생성 요청은 기존 정책대로 PENDING을 유지한다.
+
+권한이 있는 원본으로 로컬 Shape Key 세트를 만들 때는 Blender 4.5 이상에서 아래처럼 실행한다. 원본 파일과 결과 `web/viewer/local-morphs/`는 Git에 추가하지 않는다.
+
+```powershell
+blender --background --factory-startup --disable-autoexec --python-exit-code 1 --python scripts/export-avatar-morphs.py -- --male <남성.blend> --female <여성.blend> --measurements <치수표.csv>
+```
+
+`scripts/run-web.ps1`과 `scripts/run-web.sh`은 결과 세 파일이 있으면 로컬 Shape Key 세트를 켠다. 직접 실행할 때는 `--dart-define=OSEE_LOCAL_AVATAR_MORPHS=true`를 추가한다. Flutter 웹 빌드는 `web/`의 로컬 파일도 복사하므로, 원본 공개 권한이 없는 로컬 작업 환경에서 만든 빌드를 배포하지 않는다. 계산 검증은 `node --test test/avatar_height_test.mjs test/avatar_weight_test.mjs test/avatar_morphs_test.mjs`로 실행한다.
 
 마이페이지에서 프로필을 수정할 수 있고 닉네임 변경 기간 제한은 없다. 헤더 프로필 아이콘에 마우스를 올리거나 키보드 포커스를 주면 간이정보가 표시되며 클릭으로 마이페이지에 접근한다.
 

@@ -11,6 +11,7 @@ enum BodyMeasurement {
   final String key;
   final String label;
   bool get isLength => this != weight;
+  bool get isMorphDimension => this != height && this != weight;
   String get unit => isLength ? 'cm' : 'kg';
 
   num? parseInput(String input) {
@@ -54,6 +55,11 @@ class BodyMeasurements {
   }
 
   final Map<BodyMeasurement, num> values;
+
+  Map<String, num> get morphDimensionsMm => {
+    for (final field in BodyMeasurement.values)
+      if (field.isMorphDimension) field.key: values[field]!,
+  };
 
   factory BodyMeasurements.fromJson(Object? json) {
     if (json is! Map<String, Object?>) {

@@ -99,6 +99,10 @@ void main() {
       tester.widget<AvatarViewer>(find.byType(AvatarViewer)).weightKg,
       55.125,
     );
+    expect(
+      tester.widget<AvatarViewer>(find.byType(AvatarViewer)).dimensionsMm,
+      containsPair('waistCircumferenceMm', 650),
+    );
     await tester.pumpWidget(const SizedBox());
     await tester.pumpWidget(
       OseeApp(initialAuth: auth, initialStore: store, bodyProfileApi: api()),
@@ -468,6 +472,16 @@ void main() {
     expect(preview.model, AvatarModel.male);
     expect(preview.heightMm, 1723);
     expect(preview.weightKg, 92.5);
+    if (AvatarViewer.useLocalMorphs) {
+      final waist = find.byKey(const ValueKey('waistCircumferenceMm'));
+      await tester.ensureVisible(waist);
+      await tester.enterText(waist, '88.2');
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<AvatarViewer>(find.byType(AvatarViewer)).dimensionsMm,
+        containsPair('waistCircumferenceMm', 882),
+      );
+    }
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox());
     body.dispose();

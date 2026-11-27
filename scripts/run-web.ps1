@@ -5,7 +5,14 @@ try {
         throw 'Copy .env.example to .env and set GOOGLE_OAUTH_CLIENT_ID first.'
     }
     Write-Host 'Open http://localhost:5173 in your normal browser. Use the same browser profile to retain your login.'
-    flutter run -d web-server --web-hostname localhost --web-port 5173 --dart-define-from-file=.env
+    $morphDir = 'web/viewer/local-morphs'
+    $morphArgs = @()
+    if ((Test-Path "$morphDir/male.glb" -PathType Leaf) -and
+        (Test-Path "$morphDir/female.glb" -PathType Leaf) -and
+        (Test-Path "$morphDir/calibration.json" -PathType Leaf)) {
+        $morphArgs += '--dart-define=OSEE_LOCAL_AVATAR_MORPHS=true'
+    }
+    flutter run -d web-server --web-hostname localhost --web-port 5173 --dart-define-from-file=.env @morphArgs
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 } finally {
     Pop-Location

@@ -4,6 +4,11 @@
 .env.*
 !.env.example
 
+# Private source files and generated local avatar assets.
+*_rigged_shapekeys.blend*
+avatar_measurements.csv
+/web/viewer/local-morphs/
+
 *.class
 *.log
 *.pyc
